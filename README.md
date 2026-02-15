@@ -1,6 +1,6 @@
 # GreenAviation Backend API
 
-Backend API para el sistema de gestión de GreenAviation Campus. Desarrollado con Node.js, Express y MongoDB.
+Backend API para el sistema de gestión de GreenAviation Campus. Desarrollado con Node.js, Express y PostgreSQL.
 
 ## 🚀 Características
 
@@ -14,7 +14,7 @@ Backend API para el sistema de gestión de GreenAviation Campus. Desarrollado co
 ## 📋 Requisitos Previos
 
 - Node.js (v18 o superior)
-- MongoDB (local o remoto)
+- PostgreSQL (v12 o superior)
 - npm o yarn
 
 ## 🔧 Instalación
@@ -29,15 +29,31 @@ npm install
 # Crear archivo .env manualmente
 ```
 
-3. Editar `.env` con tus configuraciones:
+3. Crear la base de datos en PostgreSQL:
+```sql
+CREATE DATABASE greenaviation;
+```
+
+4. Ejecutar el schema SQL:
+```bash
+# Ejecutar el archivo schema_postgresql.sql en tu base de datos
+psql -U tu_usuario -d greenaviation -f database/schema_postgresql.sql
+```
+
+5. Editar `.env` con tus configuraciones:
 ```env
 PORT=5000
-DATABASE_URL=mongodb://localhost:27017/greenaviation
+DATABASE_URL=postgresql://usuario:contraseña@localhost:5432/greenaviation
 JWT_SECRET=tu_secret_key_muy_segura_aqui
 JWT_EXPIRE=7d
 ```
 
-4. Iniciar servidor:
+6. Poblar la base de datos con datos de ejemplo (opcional):
+```bash
+npm run seed
+```
+
+7. Iniciar servidor:
 ```bash
 # Desarrollo
 npm run dev
@@ -54,9 +70,12 @@ Back (plantilla)/
 │   ├── auth.controller.js
 │   ├── user.controller.js
 │   └── flight.controller.js
-├── models/               # Modelos de MongoDB
-│   ├── User.model.js
-│   └── Flight.model.js
+├── database/              # Configuración de base de datos
+│   ├── connection.js     # Conexión a PostgreSQL
+│   └── schema_postgresql.sql  # Schema SQL
+├── models/               # Repositorios de datos
+│   ├── User.repository.js
+│   └── Flight.repository.js
 ├── routes/               # Rutas de la API
 │   ├── auth.routes.js
 │   ├── user.routes.js
@@ -100,61 +119,56 @@ Back (plantilla)/
 
 ### Usuario (User)
 
-```javascript
-{
-  email: String (único, requerido),
-  password: String (requerido, hasheado),
-  role: 'admin' | 'alumno',
-  nombre: String,
-  apellido: String,
-  cedula: String (único),
-  numeroTelefono: String,
-  edad: Number,
-  fechaInicioCurso: Date,
-  estado: 'Cursando' | 'Finalizado',
-  progreso: Number (0-100),
-  calificaciones: [{
-    tipo: String,
-    calificacion: Number,
-    fecha: Date,
-    observaciones: String
-  }],
-  ultimoAcceso: Date,
-  curso: String
-}
-```
+La tabla `users` almacena la información de usuarios. Las calificaciones se almacenan en la tabla separada `calificaciones`.
+
+**Tabla: users**
+- `id`: UUID (PK)
+- `email`: VARCHAR (único, requerido)
+- `password`: VARCHAR (hasheado con bcrypt)
+- `role`: VARCHAR ('admin' | 'alumno')
+- `nombre`, `apellido`: VARCHAR
+- `cedula`: VARCHAR (único)
+- `numero_telefono`: VARCHAR
+- `edad`: INT
+- `fecha_inicio_curso`: DATE
+- `estado`: VARCHAR ('Cursando' | 'Finalizado')
+- `progreso`: INT (0-100)
+- `curso`: VARCHAR
+- `ultimo_acceso`: TIMESTAMP
+- `created_at`, `updated_at`: TIMESTAMP
+
+**Tabla: calificaciones**
+- `id`: UUID (PK)
+- `user_id`: UUID (FK a users)
+- `tipo`: VARCHAR
+- `calificacion`: INT (0-100)
+- `fecha`: TIMESTAMP
+- `observaciones`: TEXT
 
 ### Vuelo (Flight)
 
-```javascript
-{
-  alumno: ObjectId (referencia a User),
-  fecha: Date,
-  duracion: Number (minutos),
-  calificacion: Number (0-100),
-  maniobras: [{
-    nombre: String,
-    calificacion: Number,
-    observaciones: String,
-    completada: Boolean
-  }],
-  tipoVuelo: 'Solo' | 'Dual' | 'Chequeo' | 'Práctico' | 'Otro',
-  aeronave: {
-    tipo: String,
-    matricula: String
-  },
-  instructor: {
-    nombre: String,
-    licencia: String
-  },
-  observaciones: String,
-  horasVuelo: {
-    tipo: 'Solo' | 'Dual' | 'Instrumental' | 'Noche',
-    cantidad: Number
-  },
-  estado: 'Completado' | 'Cancelado' | 'Reprogramado'
-}
-```
+**Tabla: flights**
+- `id`: UUID (PK)
+- `alumno_id`: UUID (FK a users)
+- `fecha`: DATE
+- `duracion`: INT (minutos)
+- `calificacion`: INT (0-100)
+- `tipo_vuelo`: VARCHAR ('Solo' | 'Dual' | 'Chequeo' | 'Práctico' | 'Otro')
+- `aeronave_tipo`, `aeronave_matricula`: VARCHAR
+- `instructor_nombre`, `instructor_licencia`: VARCHAR
+- `observaciones`: TEXT
+- `horas_vuelo_tipo`: VARCHAR
+- `horas_vuelo_cantidad`: DECIMAL
+- `estado`: VARCHAR ('Completado' | 'Cancelado' | 'Reprogramado')
+- `created_at`, `updated_at`: TIMESTAMP
+
+**Tabla: maniobras**
+- `id`: UUID (PK)
+- `flight_id`: UUID (FK a flights)
+- `nombre`: VARCHAR
+- `calificacion`: INT (0-100)
+- `observaciones`: TEXT
+- `completada`: BOOLEAN
 
 ## 🔐 Autenticación
 
@@ -200,7 +214,7 @@ POST /api/auth/login
 POST /api/flights
 Authorization: Bearer <token>
 {
-  "alumno": "507f1f77bcf86cd799439011",
+  "alumno": "uuid-del-alumno",
   "fecha": "2024-01-15",
   "duracion": 90,
   "calificacion": 85,
@@ -229,6 +243,8 @@ Para probar la API, puedes usar herramientas como:
 - Los tokens JWT expiran según la configuración en `.env`
 - Los alumnos solo pueden ver sus propios datos y vuelos
 - Los administradores tienen acceso completo
+- La base de datos usa PostgreSQL con UUIDs como IDs primarios
+- Las calificaciones y maniobras se almacenan en tablas separadas para mejor normalización
 
 ## 🚀 Próximos Pasos
 
