@@ -525,6 +525,6 @@ export const exportarAlumnoExcel = async (alumnoId) => {
     worksheet.getCell('D44').value = 'OTROS:';
     worksheet.getCell('F44').value = primeraInscripcion ? safeValue(primeraInscripcion.otros) : '';
 
-
-
+  // Retornar el workbook para que pueda ser usado en el controller
+  return workbook;
 }
