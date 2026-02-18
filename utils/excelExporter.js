@@ -231,6 +231,12 @@ export const exportarAlumnoExcel = async (alumnoId) => {
 
   const workbook = new ExcelJS.Workbook();
   const worksheet = workbook.addWorksheet('Historial de Vuelo');
+  
+  // Configurar ancho de columnas (aumentar A y B en 50%)
+  // El ancho por defecto es aproximadamente 10, así que 50% más sería 15
+  worksheet.getColumn('A').width = 15;
+  worksheet.getColumn('B').width = 15;
+  
   const imageId = workbook.addImage({
     filename: './assets/greenAviationLogo.jpeg', 
     extension: 'jpeg'
@@ -245,10 +251,14 @@ export const exportarAlumnoExcel = async (alumnoId) => {
     name: 'Arial',
     size: 16,
     bold: true,
-    color: { rgb: 'FFFFFF' }
+    color: { argb: 'FF000000' } // Negro para el texto
   };
   titulo.alignment = { horizontal: 'center', vertical: 'center' };
-  titulo.fill = { type: 'pattern', pattern: 'solid', fgColor: { rgb: '000000' } };
+  titulo.fill = { 
+    type: 'pattern', 
+    pattern: 'solid', 
+    fgColor: { argb: 'FFFFFFFF' } // Blanco para el fondo
+  };
   titulo.border = { top: { style: 'thin' }, bottom: { style: 'thin' }, left: { style: 'thin' }, right: { style: 'thin' } };
   
   worksheet.addImage(imageId, {

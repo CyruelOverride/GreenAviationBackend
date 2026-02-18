@@ -98,12 +98,11 @@ export const createUser = async (userData) => {
     nombre,
     apellido,
     cedula,
-    numeroTelefono,
-    telefono,
-    celular,
-    edad,
-    fechaNac,
-    direccion,
+      numeroTelefono,
+      telefono,
+      celular,
+      fechaNac,
+      direccion,
     departamento,
     ciudad,
     sexo,
@@ -123,11 +122,11 @@ export const createUser = async (userData) => {
   const result = await query(
     `INSERT INTO users (
       email, password, role, nombre, apellido, cedula, 
-      numero_telefono, telefono, celular, edad, fecha_nac,
+      numero_telefono, telefono, celular, fecha_nac,
       direccion, departamento, ciudad, sexo,
       contacto_emergencia, nombre_emergencia, emergencia_medica,
       fecha_inicio_curso, estado, progreso, curso
-    ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22)
+    ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21)
     RETURNING *`,
     [
       email.toLowerCase(),
@@ -139,7 +138,6 @@ export const createUser = async (userData) => {
       numeroTelefono,
       telefono,
       celular,
-      edad,
       fechaNac,
       direccion,
       departamento,
