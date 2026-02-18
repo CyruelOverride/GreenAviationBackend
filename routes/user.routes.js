@@ -6,7 +6,8 @@ import {
   updateUser,
   deleteUser,
   addCalificacion,
-  getStats
+  getStats,
+  exportAlumnoExcel
 } from '../controllers/user.controller.js';
 import { authenticate, isAdmin, isOwnerOrAdmin } from '../middleware/auth.middleware.js';
 
@@ -27,6 +28,9 @@ router.delete('/:id', isAdmin, deleteUser);
 
 // Ruta para agregar calificaciones
 router.post('/:id/calificaciones', isAdmin, addCalificacion);
+
+// Ruta para exportar historial de alumno a Excel
+router.get('/:id/export-excel', exportAlumnoExcel);
 
 export default router;
 

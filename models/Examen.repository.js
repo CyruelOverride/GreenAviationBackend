@@ -110,6 +110,8 @@ export const getExamenById = async (examenId) => {
       SELECT 
         p.id AS pregunta_id,
         p.enunciado,
+        ep.opcion_seleccionada_id,
+        ep.respondida,
         RANDOM() as pregunta_order
       FROM examen_pregunta ep
       JOIN pregunta p ON p.id = ep.pregunta_id
@@ -119,6 +121,8 @@ export const getExamenById = async (examenId) => {
       SELECT 
         pm.pregunta_id,
         pm.enunciado,
+        pm.opcion_seleccionada_id,
+        pm.respondida,
         pm.pregunta_order,
         o.id AS opcion_id,
         o.texto,
@@ -130,6 +134,8 @@ export const getExamenById = async (examenId) => {
     SELECT 
       pregunta_id,
       enunciado,
+      opcion_seleccionada_id,
+      respondida,
       opcion_id,
       texto,
       es_correcta
@@ -147,6 +153,8 @@ export const getExamenById = async (examenId) => {
       preguntasMap.set(preguntaId, {
         id: preguntaId,
         enunciado: row.enunciado,
+        opcionSeleccionadaId: row.opcion_seleccionada_id,
+        respondida: row.respondida,
         opciones: []
       });
     }
@@ -237,7 +245,10 @@ export const finalizarExamen = async (examenId) => {
     
     await client.query('COMMIT');
     
-    return mapRowToExamen(updateResult.rows[0]);
+    // Obtener el examen completo con preguntas, opciones y respuestas seleccionadas
+    const examenCompleto = await getExamenById(examenId);
+    
+    return examenCompleto;
   } catch (error) {
     await client.query('ROLLBACK');
     throw error;

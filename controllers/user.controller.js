@@ -1,4 +1,5 @@
 import * as UserRepo from '../models/User.repository.js';
+import { exportarAlumnoExcel } from '../utils/excelExporter.js';
 
 // @desc    Obtener todos los usuarios (solo admin)
 // @route   GET /api/users
@@ -64,9 +65,21 @@ export const createUser = async (req, res) => {
       apellido,
       cedula,
       numeroTelefono,
+      telefono,
+      celular,
       edad,
+      fechaNac,
+      direccion,
+      departamento,
+      ciudad,
+      sexo,
+      contactoEmergencia,
+      nombreEmergencia,
+      emergenciaMedica,
       fechaInicioCurso,
-      estado
+      estado,
+      entrenamientoPrevio,
+      inscripcion
     } = req.body;
 
     // Validar email único
@@ -97,9 +110,21 @@ export const createUser = async (req, res) => {
       apellido,
       cedula,
       numeroTelefono,
+      telefono,
+      celular,
       edad,
+      fechaNac,
+      direccion,
+      departamento,
+      ciudad,
+      sexo,
+      contactoEmergencia,
+      nombreEmergencia,
+      emergenciaMedica,
       fechaInicioCurso: fechaInicioCurso || new Date(),
-      estado: estado || 'Cursando'
+      estado: estado || 'Cursando',
+      entrenamientoPrevio,
+      inscripcion
     });
 
     res.status(201).json({
@@ -126,7 +151,17 @@ export const updateUser = async (req, res) => {
       apellido,
       cedula,
       numeroTelefono,
+      telefono,
+      celular,
       edad,
+      fechaNac,
+      direccion,
+      departamento,
+      ciudad,
+      sexo,
+      contactoEmergencia,
+      nombreEmergencia,
+      emergenciaMedica,
       estado,
       progreso,
       fechaInicioCurso
@@ -156,7 +191,17 @@ export const updateUser = async (req, res) => {
       apellido,
       cedula,
       numeroTelefono,
+      telefono,
+      celular,
       edad,
+      fechaNac,
+      direccion,
+      departamento,
+      ciudad,
+      sexo,
+      contactoEmergencia,
+      nombreEmergencia,
+      emergenciaMedica,
       estado,
       progreso,
       fechaInicioCurso
@@ -271,6 +316,53 @@ export const getStats = async (req, res) => {
     res.status(500).json({
       success: false,
       message: 'Error al obtener estadísticas',
+      error: error.message
+    });
+  }
+};
+
+// @desc    Exportar historial de alumno a Excel
+// @route   GET /api/users/:id/export-excel
+// @access  Private
+export const exportAlumnoExcel = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    // Verificar que el usuario existe
+    const user = await UserRepo.findUserById(id);
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'Usuario no encontrado'
+      });
+    }
+
+    // Verificar permisos: solo el mismo usuario o admin puede exportar
+    if (req.user.role !== 'admin' && req.user.id !== id) {
+      return res.status(403).json({
+        success: false,
+        message: 'No tienes permisos para exportar este historial'
+      });
+    }
+
+    // Generar el archivo Excel
+    const workbook = await exportarAlumnoExcel(id);
+
+    // Configurar headers para descarga
+    const nombreArchivo = `${user.nombre || 'alumno'}_${user.apellido || ''}`.replace(/\s+/g, '_').toLowerCase();
+    const fileName = `historial_${nombreArchivo}_${new Date().toISOString().split('T')[0]}.xlsx`;
+
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    res.setHeader('Content-Disposition', `attachment; filename="${fileName}"`);
+
+    // Enviar el archivo
+    await workbook.xlsx.write(res);
+    res.end();
+  } catch (error) {
+    console.error('Error al exportar Excel:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error al exportar historial a Excel',
       error: error.message
     });
   }

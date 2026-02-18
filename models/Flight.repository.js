@@ -123,6 +123,11 @@ export const createFlight = async (flightData) => {
     calificacion,
     maniobras = [],
     tipoVuelo = 'Dual',
+    tipo,
+    matricula,
+    modelo,
+    aerod,
+    inspectorDinacia,
     aeronave = {},
     instructor = {},
     observaciones,
@@ -133,13 +138,14 @@ export const createFlight = async (flightData) => {
   // Insertar vuelo
   const flightResult = await query(
     `INSERT INTO flights (
-      alumno_id, fecha, duracion, calificacion, tipo_vuelo,
+      alumno_id, fecha, duracion, calificacion, tipo_vuelo, tipo,
+      matricula, modelo, aerod, inspector_dinacia,
       aeronave_tipo, aeronave_matricula,
-      instructor_nombre, instructor_licencia,
+      instructor_nombre, instructor_licencia, instructor,
       observaciones,
       horas_vuelo_tipo, horas_vuelo_cantidad,
       estado
-    ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
+    ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19)
     RETURNING *`,
     [
       alumnoId,
@@ -147,10 +153,16 @@ export const createFlight = async (flightData) => {
       duracion,
       calificacion,
       tipoVuelo,
+      tipo,
+      matricula || aeronave.matricula || null,
+      modelo || null,
+      aerod || null,
+      inspectorDinacia || null,
       aeronave.tipo || null,
-      aeronave.matricula || null,
+      aeronave.matricula || matricula || null,
       instructor.nombre || null,
       instructor.licencia || null,
+      instructor.nombre || null, // Campo instructor (VARCHAR) - puede ser diferente de instructor_nombre
       observaciones || null,
       horasVuelo.tipo || 'Dual',
       horasVuelo.cantidad || 0,
@@ -191,6 +203,11 @@ export const updateFlight = async (id, flightData) => {
     duracion: 'duracion',
     calificacion: 'calificacion',
     tipoVuelo: 'tipo_vuelo',
+    tipo: 'tipo',
+    matricula: 'matricula',
+    modelo: 'modelo',
+    aerod: 'aerod',
+    inspectorDinacia: 'inspector_dinacia',
     observaciones: 'observaciones',
     estado: 'estado'
   };
@@ -215,12 +232,43 @@ export const updateFlight = async (id, flightData) => {
       fields.push(`instructor_nombre = $${paramCount}`);
       values.push(flightData.instructor.nombre);
       paramCount++;
+      // Campo instructor (VARCHAR) - mismo valor que instructor_nombre
+      fields.push(`instructor = $${paramCount}`);
+      values.push(flightData.instructor.nombre);
+      paramCount++;
     }
     if (flightData.instructor.licencia !== undefined) {
       fields.push(`instructor_licencia = $${paramCount}`);
       values.push(flightData.instructor.licencia);
       paramCount++;
     }
+  }
+  
+  // Campos nuevos de vuelo (si vienen directamente, no en objetos anidados)
+  if (flightData.tipo !== undefined) {
+    fields.push(`tipo = $${paramCount}`);
+    values.push(flightData.tipo);
+    paramCount++;
+  }
+  if (flightData.matricula !== undefined) {
+    fields.push(`matricula = $${paramCount}`);
+    values.push(flightData.matricula);
+    paramCount++;
+  }
+  if (flightData.modelo !== undefined) {
+    fields.push(`modelo = $${paramCount}`);
+    values.push(flightData.modelo);
+    paramCount++;
+  }
+  if (flightData.aerod !== undefined) {
+    fields.push(`aerod = $${paramCount}`);
+    values.push(flightData.aerod);
+    paramCount++;
+  }
+  if (flightData.inspectorDinacia !== undefined) {
+    fields.push(`inspector_dinacia = $${paramCount}`);
+    values.push(flightData.inspectorDinacia);
+    paramCount++;
   }
 
   // Campos de horas de vuelo
