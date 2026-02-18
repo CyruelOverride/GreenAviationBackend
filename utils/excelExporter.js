@@ -198,6 +198,13 @@ const safeValue = (value) => {
   return value;
 };
 
+// Función auxiliar para aplicar alineación a la derecha a celdas que no son títulos
+const setCellValueRight = (worksheet, cellAddress, value) => {
+  const cell = worksheet.getCell(cellAddress);
+  cell.value = safeValue(value);
+  cell.alignment = { horizontal: 'right', vertical: 'top' };
+};
+
 export const exportarAlumnoExcel = async (alumnoId) => {
   const historialAlumnoCompleto = await getHistorialAlumno(alumnoId);
 
@@ -232,10 +239,17 @@ export const exportarAlumnoExcel = async (alumnoId) => {
   const workbook = new ExcelJS.Workbook();
   const worksheet = workbook.addWorksheet('Historial de Vuelo');
   
-  // Configurar ancho de columnas (aumentar A y B)
-  // El ancho por defecto es aproximadamente 10, aumentado a 18 y luego 10% más = 19.8
-  worksheet.getColumn('A').width = 19.8;
-  worksheet.getColumn('B').width = 19.8;
+  // Configurar ancho de columnas
+  // Columnas A y B: más anchas (22)
+  worksheet.getColumn('A').width = 22;
+  worksheet.getColumn('B').width = 22;
+  
+  // Resto de columnas: aumentar 10% desde el ancho por defecto (10 * 1.1 = 11)
+  worksheet.getColumn('C').width = 11;
+  worksheet.getColumn('D').width = 11;
+  worksheet.getColumn('E').width = 11;
+  worksheet.getColumn('F').width = 11;
+  worksheet.getColumn('G').width = 11;
   
   const imageId = workbook.addImage({
     filename: './assets/greenAviationLogo.jpeg', 
@@ -281,33 +295,33 @@ export const exportarAlumnoExcel = async (alumnoId) => {
     };
 
     worksheet.getCell('A3').value = 'Nombre del piloto:';
-    worksheet.getCell('B3').value = safeValue((usuario.nombre || '') + ' ' + (usuario.apellido || '')).trim();
+    setCellValueRight(worksheet, 'B3', ((usuario.nombre || '') + ' ' + (usuario.apellido || '')).trim());
     worksheet.getCell('A4').value = 'Fecha de Nacimiento:';
-    worksheet.getCell('B4').value = safeValue(usuario.fechaNac);
+    setCellValueRight(worksheet, 'B4', usuario.fechaNac);
     worksheet.getCell('A5').value = 'Correo Electrónico:';
-    worksheet.getCell('B5').value = safeValue(usuario.email);
+    setCellValueRight(worksheet, 'B5', usuario.email);
     worksheet.getCell('A6').value = 'Teléfono:';
-    worksheet.getCell('B6').value = safeValue(usuario.telefono);
+    setCellValueRight(worksheet, 'B6', usuario.telefono);
     worksheet.getCell('A7').value = 'Dirección:';
-    worksheet.getCell('B7').value = safeValue(usuario.direccion);
+    setCellValueRight(worksheet, 'B7', usuario.direccion);
     worksheet.getCell('A8').value = 'Departamento:';
-    worksheet.getCell('B8').value = safeValue(usuario.departamento);
+    setCellValueRight(worksheet, 'B8', usuario.departamento);
     worksheet.getCell('A9').value = 'Contacto de emergencia:';
-    worksheet.getCell('B9').value = safeValue(usuario.contactoEmergencia);
+    setCellValueRight(worksheet, 'B9', usuario.contactoEmergencia);
     worksheet.getCell('A10').value = 'Nombre:';
-    worksheet.getCell('B10').value = safeValue(usuario.nombreEmergencia);
+    setCellValueRight(worksheet, 'B10', usuario.nombreEmergencia);
     worksheet.getCell('A11').value = 'Emergencia Médica:';
-    worksheet.getCell('B11').value = safeValue(usuario.emergenciaMedica);
+    setCellValueRight(worksheet, 'B11', usuario.emergenciaMedica);
     worksheet.getCell('C4').value = "Edad:";
-    worksheet.getCell('D4').value = safeValue(edadAlumno);
+    setCellValueRight(worksheet, 'D4', edadAlumno);
     worksheet.getCell('F4').value = "Sexo:";
-    worksheet.getCell('G4').value = safeValue(usuario.sexo);
+    setCellValueRight(worksheet, 'G4', usuario.sexo);
     worksheet.getCell('C6').value = "Ciudad:";
-    worksheet.getCell('D6').value = safeValue(usuario.ciudad);
+    setCellValueRight(worksheet, 'D6', usuario.ciudad);
     worksheet.getCell('C7').value = "CP";
-    worksheet.getCell('D7').value = ''; // CP no está en la base de datos
+    setCellValueRight(worksheet, 'D7', ''); // CP no está en la base de datos
     worksheet.getCell('C10').value = "Telefono-cel";
-    worksheet.getCell('D10').value = safeValue(usuario.celular);
+    setCellValueRight(worksheet, 'D10', usuario.celular);
 
     worksheet.mergeCells('A12:F12');
 
@@ -321,19 +335,19 @@ export const exportarAlumnoExcel = async (alumnoId) => {
     fgColor: { argb: 'FFD9D9D9' } 
     };
     worksheet.getCell('A13').value = 'Fecha de Inscripción:';
-    worksheet.getCell('B13').value = primeraInscripcion ? safeValue(primeraInscripcion.fecha) : '';
+    setCellValueRight(worksheet, 'B13', primeraInscripcion ? primeraInscripcion.fecha : '');
     worksheet.getCell('A14').value = 'Certificado Medico - clase:';
-    worksheet.getCell('B14').value = primeraInscripcion ? safeValue(primeraInscripcion.certificadoMedico) : '';
+    setCellValueRight(worksheet, 'B14', primeraInscripcion ? primeraInscripcion.certificadoMedico : '');
     worksheet.getCell('C14').value = 'F.Emitida:';
-    worksheet.getCell('D14').value = primeraInscripcion ? safeValue(primeraInscripcion.fechaEmitidoCertificadoMedico) : '';
+    setCellValueRight(worksheet, 'D14', primeraInscripcion ? primeraInscripcion.fechaEmitidoCertificadoMedico : '');
     worksheet.getCell('E14').value = 'F.Vencimiento:';
-    worksheet.getCell('F14').value = primeraInscripcion ? safeValue(primeraInscripcion.vencimientoCertificadoMedico) : '';
+    setCellValueRight(worksheet, 'F14', primeraInscripcion ? primeraInscripcion.vencimientoCertificadoMedico : '');
     worksheet.getCell('A15').value = 'Licencia Alumno:';
-    worksheet.getCell('B15').value = primeraInscripcion ? safeValue(primeraInscripcion.licenciaAlumno) : '';
+    setCellValueRight(worksheet, 'B15', primeraInscripcion ? primeraInscripcion.licenciaAlumno : '');
     worksheet.getCell('C15').value = 'F.Emitida:';
-    worksheet.getCell('D15').value = primeraInscripcion ? safeValue(primeraInscripcion.fechaEmitidoLicenciaAlumno) : '';
+    setCellValueRight(worksheet, 'D15', primeraInscripcion ? primeraInscripcion.fechaEmitidoLicenciaAlumno : '');
     worksheet.getCell('E15').value = 'F.Vencimiento:';
-    worksheet.getCell('F15').value = primeraInscripcion ? safeValue(primeraInscripcion.vencimientoLicenciaAlumno) : '';
+    setCellValueRight(worksheet, 'F15', primeraInscripcion ? primeraInscripcion.vencimientoLicenciaAlumno : '');
 
     worksheet.mergeCells('A16:F16');
 
@@ -347,29 +361,32 @@ export const exportarAlumnoExcel = async (alumnoId) => {
     fgColor: { argb: 'FFD9D9D9' } 
     };
     worksheet.getCell('A17').value = 'Dual:';
-    worksheet.getCell('B17').value = safeValue(entrenamientoPrevio.dual);
+    setCellValueRight(worksheet, 'B17', entrenamientoPrevio.dual);
     worksheet.getCell('A18').value = 'Solo:';
-    worksheet.getCell('B18').value = safeValue(entrenamientoPrevio.solo);
+    setCellValueRight(worksheet, 'B18', entrenamientoPrevio.solo);
     worksheet.getCell('A19').value = 'Nocturno solo:';
-    worksheet.getCell('B19').value = safeValue(entrenamientoPrevio.nocturnoSolo);
+    setCellValueRight(worksheet, 'B19', entrenamientoPrevio.nocturnoSolo);
     worksheet.getCell('A20').value = 'Instruccion Teorica:';
-    worksheet.getCell('B20').value = safeValue(entrenamientoPrevio.instruccionTeorica);
+    setCellValueRight(worksheet, 'B20', entrenamientoPrevio.instruccionTeorica);
     worksheet.getCell('A21').value = 'Instruccion Previa Tierra:';
-    worksheet.getCell('B21').value = safeValue(entrenamientoPrevio.instruccionTierra);
+    setCellValueRight(worksheet, 'B21', entrenamientoPrevio.instruccionTierra);
     worksheet.getCell('A22').value = 'Instruccion Previa Vuelo:';
-    worksheet.getCell('B22').value = safeValue(entrenamientoPrevio.instruccionVuelo);
+    setCellValueRight(worksheet, 'B22', entrenamientoPrevio.instruccionVuelo);
     worksheet.getCell('C17').value = 'Nav Dual:';
-    worksheet.getCell('D17').value = safeValue(entrenamientoPrevio.navDual);
+    setCellValueRight(worksheet, 'D17', entrenamientoPrevio.navDual);
     worksheet.getCell('C18').value = 'Nav Solo:';
-    worksheet.getCell('D18').value = safeValue(entrenamientoPrevio.navSolo);
+    setCellValueRight(worksheet, 'D18', entrenamientoPrevio.navSolo);
     worksheet.getCell('C19').value = 'Nav Nocturno:';
-    worksheet.getCell('D19').value = safeValue(entrenamientoPrevio.noctSolo);
+    setCellValueRight(worksheet, 'D19', entrenamientoPrevio.noctSolo);
+    worksheet.mergeCells('C20:D20');
     worksheet.getCell('C20').value = 'Aterrizaje Nocturno:';
-    worksheet.getCell('D20').value = safeValue(entrenamientoPrevio.aterrizajesNoct);
+    setCellValueRight(worksheet, 'D20', entrenamientoPrevio.aterrizajesNoct);
+    worksheet.mergeCells('C21:D21');
     worksheet.getCell('C21').value = 'Chequeo completo:';
-    worksheet.getCell('D21').value = safeValue(entrenamientoPrevio.chequeoFasesComp);
+    setCellValueRight(worksheet, 'D21', entrenamientoPrevio.chequeoFasesComp);
+    worksheet.mergeCells('C22:D22');
     worksheet.getCell('C22').value = 'Ciac instructor:';
-    worksheet.getCell('D22').value = safeValue(entrenamientoPrevio.ciacInstructor);
+    setCellValueRight(worksheet, 'D22', entrenamientoPrevio.ciacInstructor);
 
     
     worksheet.mergeCells('A23:B23');
@@ -384,9 +401,9 @@ export const exportarAlumnoExcel = async (alumnoId) => {
     fgColor: { argb: 'FFFFFFFF' } // Fondo blanco en lugar de gris
     };
     worksheet.getCell('C23').value = 'Si';
-    worksheet.getCell('D23').value = entrenamientoPrevio.carteDeTransferencia ? 'X' : '';
+    setCellValueRight(worksheet, 'D23', entrenamientoPrevio.carteDeTransferencia ? 'X' : '');
     worksheet.getCell('E23').value = 'No';
-    worksheet.getCell('F23').value = entrenamientoPrevio.carteDeTransferencia ? '' : 'X';
+    setCellValueRight(worksheet, 'F23', entrenamientoPrevio.carteDeTransferencia ? '' : 'X');
 
     worksheet.mergeCells('A24:F24');
     
@@ -401,70 +418,70 @@ export const exportarAlumnoExcel = async (alumnoId) => {
     };
     
     worksheet.getCell('A25').value = 'Pre vuelo solo examen:';
-    worksheet.getCell('B25').value = examenPreSolo.existe 
-      ? safeValue(examenPreSolo.puntaje)
-      : 'No realizado';
+    setCellValueRight(worksheet, 'B25', examenPreSolo.existe 
+      ? examenPreSolo.puntaje
+      : 'No realizado');
     worksheet.mergeCells('C25:D25');
     worksheet.getCell('C25').value = 'Firma del instructor:';
     worksheet.mergeCells('E25:F25');
 
     worksheet.getCell('A26').value = 'Primer vuelo solo:';
-    worksheet.getCell('B26').value = vueloSolo.existe 
-      ? safeValue(vueloSolo.calificacion)
-      : 'No realizado';
+    setCellValueRight(worksheet, 'B26', vueloSolo.existe 
+      ? vueloSolo.calificacion
+      : 'No realizado');
     worksheet.getCell('C26').value = 'Firma del instructor:';
     worksheet.mergeCells('C26:D26');
     worksheet.mergeCells('E26:F26');
     worksheet.getCell('A27').value = 'Matricula:';
-    worksheet.getCell('B27').value = vueloSolo.existe ? safeValue(vueloSolo.matricula) : '';
+    setCellValueRight(worksheet, 'B27', vueloSolo.existe ? vueloSolo.matricula : '');
     worksheet.getCell('C27').value = 'Modelo:';
-    worksheet.getCell('D27').value = vueloSolo.existe ? safeValue(vueloSolo.modelo) : '';
+    setCellValueRight(worksheet, 'D27', vueloSolo.existe ? vueloSolo.modelo : '');
     worksheet.getCell('E27').value = 'Aerod:';
-    worksheet.getCell('F27').value = vueloSolo.existe ? safeValue(vueloSolo.aerod) : '';
+    setCellValueRight(worksheet, 'F27', vueloSolo.existe ? vueloSolo.aerod : '');
 
     // Navegación Solo
     worksheet.getCell('A28').value = 'Navegación solo:';
-    worksheet.getCell('B28').value = vueloNavegacion.existe 
-      ? safeValue(vueloNavegacion.calificacion)
-      : 'No realizado';
+    setCellValueRight(worksheet, 'B28', vueloNavegacion.existe 
+      ? vueloNavegacion.calificacion
+      : 'No realizado');
     worksheet.getCell('C28').value = 'Firma del instructor:';
     worksheet.mergeCells('C28:D28');
     worksheet.mergeCells('E28:F28');
     worksheet.getCell('A29').value = 'Matricula:';
-    worksheet.getCell('B29').value = vueloNavegacion.existe ? safeValue(vueloNavegacion.matricula) : '';
+    setCellValueRight(worksheet, 'B29', vueloNavegacion.existe ? vueloNavegacion.matricula : '');
     worksheet.getCell('C29').value = 'Modelo:';
-    worksheet.getCell('D29').value = vueloNavegacion.existe ? safeValue(vueloNavegacion.modelo) : '';
+    setCellValueRight(worksheet, 'D29', vueloNavegacion.existe ? vueloNavegacion.modelo : '');
     worksheet.getCell('E29').value = 'Aerod:';
-    worksheet.getCell('F29').value = vueloNavegacion.existe ? safeValue(vueloNavegacion.aerod) : '';
+    setCellValueRight(worksheet, 'F29', vueloNavegacion.existe ? vueloNavegacion.aerod : '');
 
     // Habilitación Avión
     worksheet.getCell('A30').value = 'Habilitación avión:';
-    worksheet.getCell('B30').value = vueloHabilitacion.existe 
-      ? safeValue(vueloHabilitacion.calificacion)
-      : 'No realizado';
+    setCellValueRight(worksheet, 'B30', vueloHabilitacion.existe 
+      ? vueloHabilitacion.calificacion
+      : 'No realizado');
     worksheet.getCell('C30').value = 'Firma del instructor:';
     worksheet.mergeCells('C30:D30');
     worksheet.mergeCells('E30:F30');
     worksheet.getCell('A31').value = 'Matricula:';
-    worksheet.getCell('B31').value = vueloHabilitacion.existe ? safeValue(vueloHabilitacion.matricula) : '';
+    setCellValueRight(worksheet, 'B31', vueloHabilitacion.existe ? vueloHabilitacion.matricula : '');
     worksheet.getCell('C31').value = 'Modelo:';
-    worksheet.getCell('D31').value = vueloHabilitacion.existe ? safeValue(vueloHabilitacion.modelo) : '';
+    setCellValueRight(worksheet, 'D31', vueloHabilitacion.existe ? vueloHabilitacion.modelo : '');
     worksheet.getCell('E31').value = 'Aerod:';
-    worksheet.getCell('F31').value = vueloHabilitacion.existe ? safeValue(vueloHabilitacion.aerod) : '';
+    setCellValueRight(worksheet, 'F31', vueloHabilitacion.existe ? vueloHabilitacion.aerod : '');
 
     worksheet.getCell('A32').value = 'Aeronaves complejas:';
-    worksheet.getCell('B32').value = vueloAeronaveCompleja.existe 
-      ? safeValue(vueloAeronaveCompleja.calificacion)
-      : 'No realizado';
+    setCellValueRight(worksheet, 'B32', vueloAeronaveCompleja.existe 
+      ? vueloAeronaveCompleja.calificacion
+      : 'No realizado');
     worksheet.getCell('C32').value = 'Firma del instructor:';
     worksheet.mergeCells('C32:D32');
     worksheet.mergeCells('E32:F32');
     worksheet.getCell('A33').value = 'Matricula:';
-    worksheet.getCell('B33').value = vueloAeronaveCompleja.existe ? safeValue(vueloAeronaveCompleja.matricula) : '';
+    setCellValueRight(worksheet, 'B33', vueloAeronaveCompleja.existe ? vueloAeronaveCompleja.matricula : '');
     worksheet.getCell('C33').value = 'Modelo:';
-    worksheet.getCell('D33').value = vueloAeronaveCompleja.existe ? safeValue(vueloAeronaveCompleja.modelo) : '';
+    setCellValueRight(worksheet, 'D33', vueloAeronaveCompleja.existe ? vueloAeronaveCompleja.modelo : '');
     worksheet.getCell('E33').value = 'Aerod:';
-    worksheet.getCell('F33').value = vueloAeronaveCompleja.existe ? safeValue(vueloAeronaveCompleja.aerod) : '';
+    setCellValueRight(worksheet, 'F33', vueloAeronaveCompleja.existe ? vueloAeronaveCompleja.aerod : '');
 
     worksheet.mergeCells('A34:F34');
     const examenes = worksheet.getCell('A34');
@@ -477,29 +494,29 @@ export const exportarAlumnoExcel = async (alumnoId) => {
     fgColor: { argb: 'FFD9D9D9' } 
     };
     worksheet.getCell('A35').value = 'Examen Teorico Escuela:';
-    worksheet.getCell('B35').value = examenFinal.existe ? 'Realizado' : 'No realizado';
+    setCellValueRight(worksheet, 'B35', examenFinal.existe ? 'Realizado' : 'No realizado');
     worksheet.getCell('C35').value = 'NOTA:';
     worksheet.mergeCells('D35:F35');
-    worksheet.getCell('D35').value = examenFinal.existe ? safeValue(examenFinal.puntaje) : 'No realizado';
+    setCellValueRight(worksheet, 'D35', examenFinal.existe ? examenFinal.puntaje : 'No realizado');
 
     worksheet.getCell('A36').value = 'Examen Vuelo Escuela:';
-    worksheet.getCell('B36').value = examenVuelo.existe ? 'Realizado' : 'No realizado';
+    setCellValueRight(worksheet, 'B36', examenVuelo.existe ? 'Realizado' : 'No realizado');
     worksheet.getCell('C36').value = 'NOTA:';
     worksheet.mergeCells('D36:F36');
-    worksheet.getCell('D36').value = examenVuelo.existe ? safeValue(examenVuelo.puntaje) : 'No realizado';
+    setCellValueRight(worksheet, 'D36', examenVuelo.existe ? examenVuelo.puntaje : 'No realizado');
 
     worksheet.getCell('A37').value = 'Instructor en jefe:';
     worksheet.mergeCells('D37:F37');
     worksheet.getCell('C37').value = 'Licencia N:';
 
     worksheet.getCell('A38').value = 'Examen Vuelo Dinacia:';
-    worksheet.getCell('B38').value = examenVueloDinacia.existe ? 'Realizado' : 'No realizado';
+    setCellValueRight(worksheet, 'B38', examenVueloDinacia.existe ? 'Realizado' : 'No realizado');
     worksheet.getCell('C38').value = 'NOTA:';
     worksheet.mergeCells('D38:F38');
-    worksheet.getCell('D38').value = examenVueloDinacia.existe ? safeValue(examenVueloDinacia.puntaje) : 'No realizado';
+    setCellValueRight(worksheet, 'D38', examenVueloDinacia.existe ? examenVueloDinacia.puntaje : 'No realizado');
 
     worksheet.getCell('A39').value = 'Inspector dinacia:';
-    worksheet.getCell('B39').value = examenVueloDinacia.existe ? safeValue(examenVueloDinacia.inspectorDinacia) : '';
+    setCellValueRight(worksheet, 'B39', examenVueloDinacia.existe ? examenVueloDinacia.inspectorDinacia : '');
 
     worksheet.getCell('A40').value = 'Certificado de graduacion:';
     worksheet.mergeCells('D40:F40');
@@ -517,23 +534,23 @@ export const exportarAlumnoExcel = async (alumnoId) => {
     };
     worksheet.mergeCells('A42:B42');
     worksheet.getCell('A42').value = 'TOTAL DESDE INSCRIPCION AL CURSO:';
-    worksheet.getCell('C42').value = primeraInscripcion ? safeValue(primeraInscripcion.totalDesdeInscripcion) : '';
+    setCellValueRight(worksheet, 'C42', primeraInscripcion ? primeraInscripcion.totalDesdeInscripcion : '');
     worksheet.getCell('D42').value = 'HS. TEORICO:';
     worksheet.mergeCells('D42:E42');
-    worksheet.getCell('F42').value = primeraInscripcion ? safeValue(primeraInscripcion.hsTeorico) : '';
+    setCellValueRight(worksheet, 'F42', primeraInscripcion ? primeraInscripcion.hsTeorico : '');
 
     worksheet.mergeCells('A43:B43');
     worksheet.getCell('A43').value = 'TOTAL FASE TEORICA:';
-    worksheet.getCell('C43').value = primeraInscripcion ? safeValue(primeraInscripcion.totalFaseTeorica) : '';
+    setCellValueRight(worksheet, 'C43', primeraInscripcion ? primeraInscripcion.totalFaseTeorica : '');
     worksheet.mergeCells('D43:E43');
     worksheet.getCell('D43').value = 'HS VUELO TOTAL:';
-    worksheet.getCell('F43').value = primeraInscripcion ? safeValue(primeraInscripcion.hsVueloTotal) : '';
+    setCellValueRight(worksheet, 'F43', primeraInscripcion ? primeraInscripcion.hsVueloTotal : '');
     worksheet.mergeCells('A44:B44');
     worksheet.getCell('A44').value = 'TOTAL FASE DE VUELO:';
-    worksheet.getCell('C44').value = primeraInscripcion ? safeValue(primeraInscripcion.totalFaseVuelo) : '';
+    setCellValueRight(worksheet, 'C44', primeraInscripcion ? primeraInscripcion.totalFaseVuelo : '');
     worksheet.mergeCells('D44:E44');
     worksheet.getCell('D44').value = 'OTROS:';
-    worksheet.getCell('F44').value = primeraInscripcion ? safeValue(primeraInscripcion.otros) : '';
+    setCellValueRight(worksheet, 'F44', primeraInscripcion ? primeraInscripcion.otros : '');
 
   // Retornar el workbook para que pueda ser usado en el controller
   return workbook;
