@@ -237,7 +237,7 @@ export const exportarAlumnoExcel = async (alumnoId) => {
   });
  
 
-  worksheet.mergecells("A1:F1");
+  worksheet.mergeCells("A1:F1");
   const titulo = worksheet.getCell("A1");
   worksheet.getRow(1).height = 50;
   titulo.value = "REGISTRO DE VUELO ALUMNO - PILOTO PRIVADO";
@@ -505,14 +505,14 @@ export const exportarAlumnoExcel = async (alumnoId) => {
     pattern: 'solid',
     fgColor: { argb: 'FFD9D9D9' } 
     };
-    worksheet.mergecells('A42:B42');
+    worksheet.mergeCells('A42:B42');
     worksheet.getCell('A42').value = 'TOTAL DESDE INSCRIPCION AL CURSO:';
     worksheet.getCell('C42').value = primeraInscripcion ? safeValue(primeraInscripcion.totalDesdeInscripcion) : '';
     worksheet.getCell('D42').value = 'HS. TEORICO:';
     worksheet.mergeCells('D42:E42');
     worksheet.getCell('F42').value = primeraInscripcion ? safeValue(primeraInscripcion.hsTeorico) : '';
 
-    worksheet.mergecells('A43:B43');
+    worksheet.mergeCells('A43:B43');
     worksheet.getCell('A43').value = 'TOTAL FASE TEORICA:';
     worksheet.getCell('C43').value = primeraInscripcion ? safeValue(primeraInscripcion.totalFaseTeorica) : '';
     worksheet.mergeCells('D43:E43');
