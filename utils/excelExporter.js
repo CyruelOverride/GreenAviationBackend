@@ -232,10 +232,10 @@ export const exportarAlumnoExcel = async (alumnoId) => {
   const workbook = new ExcelJS.Workbook();
   const worksheet = workbook.addWorksheet('Historial de Vuelo');
   
-  // Configurar ancho de columnas (aumentar A y B en 50%)
-  // El ancho por defecto es aproximadamente 10, así que 50% más sería 15
-  worksheet.getColumn('A').width = 15;
-  worksheet.getColumn('B').width = 15;
+  // Configurar ancho de columnas (aumentar A y B)
+  // El ancho por defecto es aproximadamente 10, aumentado a 18 y luego 10% más = 19.8
+  worksheet.getColumn('A').width = 19.8;
+  worksheet.getColumn('B').width = 19.8;
   
   const imageId = workbook.addImage({
     filename: './assets/greenAviationLogo.jpeg', 
@@ -376,12 +376,12 @@ export const exportarAlumnoExcel = async (alumnoId) => {
 
     const certificadoTransferencia = worksheet.getCell('A23');
     certificadoTransferencia.value = 'CERTIFICADO DE TRANSFERENCIA DEL CIAC O INSTRUCTOR';
-    certificadoTransferencia.font = { bold: true };
-    certificadoTransferencia.alignment = { horizontal: 'center' };
+    certificadoTransferencia.font = { bold: false };
+    certificadoTransferencia.alignment = { horizontal: 'left' };
     certificadoTransferencia.fill = {
     type: 'pattern',
     pattern: 'solid',
-    fgColor: { argb: 'FFD9D9D9' } 
+    fgColor: { argb: 'FFFFFFFF' } // Fondo blanco en lugar de gris
     };
     worksheet.getCell('C23').value = 'Si';
     worksheet.getCell('D23').value = entrenamientoPrevio.carteDeTransferencia ? 'X' : '';
