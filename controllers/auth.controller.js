@@ -152,6 +152,10 @@ export const getMe = async (req, res) => {
       });
     }
 
+    // Obtener calificaciones del usuario
+    const calificaciones = await UserRepo.getUserCalificaciones(req.user.id);
+    user.calificaciones = calificaciones;
+
     res.json({
       success: true,
       data: { user }

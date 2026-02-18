@@ -2,47 +2,35 @@
 
 ## Variables de Entorno
 
-Crea un archivo `.env` en la raíz del proyecto con las siguientes variables:
+Crea un archivo `.env` en la raíz del proyecto Back (plantilla) con las siguientes variables:
 
 ```env
-# Puerto del servidor (opcional, por defecto 5000)
+# Puerto del servidor
 PORT=5000
 
-# URL de conexión a PostgreSQL (OBLIGATORIO)
-DATABASE_URL=postgresql://usuario:contraseña@host:puerto/database
+# URL de conexión a PostgreSQL
+DATABASE_URL=postgresql://usuario:contraseña@localhost:5432/greenaviation
 
-# Secret key para JWT (OBLIGATORIO)
-# Genera una clave aleatoria con: node -e "console.log(require('crypto').randomBytes(64).toString('hex'))"
-JWT_SECRET=tu_clave_secreta_muy_larga_y_aleatoria_aqui
+# Secret key para JWT (cambiar en producción)
+JWT_SECRET=tu_secret_key_muy_segura_aqui_cambiar_en_produccion
 
-# Tiempo de expiración del token JWT (opcional, por defecto 7d)
+# Tiempo de expiración del token JWT
 JWT_EXPIRE=7d
-
-# Entorno (opcional, pero recomendado en producción)
-NODE_ENV=production
 ```
 
-## 🔑 Generar JWT_SECRET
+### Para Producción con PostgreSQL Remoto (Render, Heroku, etc.)
 
-Ejecuta este comando para generar una clave segura:
-
-```bash
-node -e "console.log(require('crypto').randomBytes(64).toString('hex'))"
+```env
+PORT=5000
+DATABASE_URL=postgresql://usuario:contraseña@host:puerto/database
+JWT_SECRET=tu_secret_key_muy_segura_y_larga_para_produccion
+JWT_EXPIRE=7d
 ```
-
-O usando OpenSSL:
-```bash
-openssl rand -hex 64
-```
-
-**Importante:**
-- La clave debe ser aleatoria y larga (mínimo 32 caracteres, recomendado 64+)
-- NO compartas esta clave públicamente
-- Usa diferentes claves en desarrollo y producción
 
 ## Notas
 
 - El archivo `.env` no debe ser commiteado (ya está en .gitignore)
-- Para PostgreSQL local, asegúrate de tener PostgreSQL corriendo
-- El formato de `DATABASE_URL` es: `postgresql://usuario:contraseña@host:puerto/nombre_base_datos`
-- En producción, configura estas variables en el panel de tu plataforma de hosting
+- Cambia `JWT_SECRET` por una clave segura y aleatoria en producción
+- Para PostgreSQL local, asegúrate de tener PostgreSQL corriendo en tu sistema
+- El formato de `DATABASE_URL` para PostgreSQL es: `postgresql://usuario:contraseña@host:puerto/nombre_base_datos`
+

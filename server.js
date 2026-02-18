@@ -5,6 +5,9 @@ import pool from './database/connection.js';
 import authRoutes from './routes/auth.routes.js';
 import userRoutes from './routes/user.routes.js';
 import flightRoutes from './routes/flight.routes.js';
+import examenRoutes from './routes/examen.routes.js';
+import preguntaRoutes from './routes/pregunta.routes.js';
+import opcionRoutes from './routes/opcion.routes.js';
 
 // Cargar variables de entorno
 dotenv.config();
@@ -20,6 +23,9 @@ app.use(express.urlencoded({ extended: true }));
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/flights', flightRoutes);
+app.use('/api/examenes', examenRoutes);
+app.use('/api/preguntas', preguntaRoutes);
+app.use('/api/opciones', opcionRoutes);
 
 // Ruta de prueba
 app.get('/api/health', (req, res) => {
