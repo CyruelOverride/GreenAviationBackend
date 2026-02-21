@@ -370,6 +370,39 @@ export const countUsers = async (filters = {}) => {
   return parseInt(result.rows[0].count);
 };
 
+// Cambiar contraseña de usuario
+export const changePassword = async (userId, currentPassword, newPassword) => {
+  // Obtener usuario con contraseña
+  const result = await query(
+    'SELECT * FROM users WHERE id = $1',
+    [userId]
+  );
+  
+  if (result.rows.length === 0) {
+    throw new Error('Usuario no encontrado');
+  }
+
+  const user = result.rows[0];
+  
+  // Verificar contraseña actual
+  const isMatch = await bcrypt.compare(currentPassword, user.password);
+  if (!isMatch) {
+    throw new Error('La contraseña actual es incorrecta');
+  }
+
+  // Hash de nueva contraseña
+  const salt = await bcrypt.genSalt(10);
+  const hashedPassword = await bcrypt.hash(newPassword, salt);
+
+  // Actualizar contraseña
+  await query(
+    'UPDATE users SET password = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2',
+    [hashedPassword, userId]
+  );
+
+  return true;
+};
+
 // Obtener calificaciones de un usuario
 export const getUserCalificaciones = async (userId) => {
   const result = await query(

@@ -168,3 +168,39 @@ export const getMe = async (req, res) => {
     });
   }
 };
+
+// @desc    Cambiar contraseña del usuario
+// @route   PUT /api/auth/change-password
+// @access  Private
+export const changePassword = async (req, res) => {
+  try {
+    const { currentPassword, newPassword } = req.body;
+
+    if (!currentPassword || !newPassword) {
+      return res.status(400).json({
+        success: false,
+        message: 'Por favor proporciona la contraseña actual y la nueva contraseña'
+      });
+    }
+
+    if (newPassword.length < 6) {
+      return res.status(400).json({
+        success: false,
+        message: 'La nueva contraseña debe tener al menos 6 caracteres'
+      });
+    }
+
+    await UserRepo.changePassword(req.user.id, currentPassword, newPassword);
+
+    res.json({
+      success: true,
+      message: 'Contraseña actualizada exitosamente'
+    });
+  } catch (error) {
+    const statusCode = error.message === 'La contraseña actual es incorrecta' ? 400 : 500;
+    res.status(statusCode).json({
+      success: false,
+      message: error.message || 'Error al cambiar contraseña'
+    });
+  }
+};
