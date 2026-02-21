@@ -31,6 +31,7 @@ const mapRowToUser = (row) => {
     curso: row.curso,
     ultimoAcceso: row.ultimo_acceso,
     entrenamientoPrevioId: row.entrenamiento_previo_id,
+    driveLink: row.drive_link,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
     nombreCompleto: `${row.nombre || ''} ${row.apellido || ''}`.trim(),
@@ -276,7 +277,8 @@ export const updateUser = async (id, userData) => {
     estado: 'estado',
     progreso: 'progreso',
     fechaInicioCurso: 'fecha_inicio_curso',
-    curso: 'curso'
+    curso: 'curso',
+    driveLink: 'drive_link'
   };
 
   for (const [key, dbField] of Object.entries(allowedFields)) {
