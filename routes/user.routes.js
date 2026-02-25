@@ -7,7 +7,8 @@ import {
   deleteUser,
   addCalificacion,
   getStats,
-  exportAlumnoExcel
+  exportAlumnoExcel,
+  getHistorialAlumnoJson
 } from '../controllers/user.controller.js';
 import { authenticate, isAdmin, isOwnerOrAdmin } from '../middleware/auth.middleware.js';
 
@@ -21,6 +22,7 @@ router.get('/stats/overview', isAdmin, getStats);
 
 // Rutas CRUD
 router.get('/', isAdmin, getAllUsers);
+router.get('/:id/historial', getHistorialAlumnoJson);
 router.get('/:id', getUserById);
 router.post('/', isAdmin, createUser);
 router.put('/:id', isOwnerOrAdmin, updateUser);

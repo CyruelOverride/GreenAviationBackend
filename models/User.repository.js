@@ -582,7 +582,50 @@ export const getHistorialAlumno = async (userId) => {
   // 5. Obtener calificaciones
   const calificaciones = await getUserCalificaciones(userId);
 
-  // 6. Obtener exámenes
+  // 6. Obtener videos vistos (video_progress)
+  const videosResult = await query(
+    `SELECT id, video_numero, started_at, created_at
+     FROM video_progress
+     WHERE user_id = $1
+     ORDER BY started_at DESC`,
+    [userId]
+  );
+
+  const videosVistos = videosResult.rows.map(row => ({
+    id: row.id,
+    videoNumero: row.video_numero,
+    startedAt: row.started_at,
+    createdAt: row.created_at
+  }));
+
+  // 7. Obtener clases online a las que el alumno se ha registrado
+  const clasesResult = await query(
+    `SELECT 
+      co.id, co.link, co.link_grabacion, co.fecha_hora_inicio, co.fecha_hora_fin, co.estado,
+      coa.fecha_registro,
+      u_instr.nombre as instructor_nombre, u_instr.apellido as instructor_apellido
+     FROM clases_online_alumnos coa
+     JOIN clases_online co ON co.id = coa.clase_online_id
+     LEFT JOIN users u_instr ON co.instructor_id = u_instr.id
+     WHERE coa.alumno_id = $1
+     ORDER BY coa.fecha_registro DESC`,
+    [userId]
+  );
+
+  const clasesIngresadas = clasesResult.rows.map(row => ({
+    id: row.id,
+    link: row.link,
+    linkGrabacion: row.link_grabacion,
+    fechaHoraInicio: row.fecha_hora_inicio,
+    fechaHoraFin: row.fecha_hora_fin,
+    estado: row.estado,
+    fechaRegistro: row.fecha_registro,
+    instructor: row.instructor_nombre || row.instructor_apellido
+      ? `${row.instructor_nombre || ''} ${row.instructor_apellido || ''}`.trim()
+      : null
+  }));
+
+  // 8. Obtener exámenes
   const examenesResult = await query(
     `SELECT 
       e.*,
@@ -609,7 +652,7 @@ export const getHistorialAlumno = async (userId) => {
     preguntasRespondidas: parseInt(row.preguntas_respondidas) || 0
   }));
 
-  // 7. Calcular estadísticas
+  // 9. Calcular estadísticas
   const totalHorasVuelo = vuelos.reduce((sum, v) => sum + (v.horasVuelo.cantidad || 0), 0);
   const promedioCalificaciones = calificaciones.length > 0
     ? calificaciones.reduce((sum, c) => sum + c.calificacion, 0) / calificaciones.length
@@ -625,6 +668,8 @@ export const getHistorialAlumno = async (userId) => {
     vuelos,
     calificaciones,
     examenes,
+    videosVistos,
+    clasesIngresadas,
     estadisticas: {
       totalVuelos: vuelos.length,
       totalHorasVuelo: Math.round(totalHorasVuelo * 100) / 100,

@@ -1,6 +1,56 @@
 import * as UserRepo from '../models/User.repository.js';
 import { exportarAlumnoExcel } from '../utils/excelExporter.js';
 
+// @desc    Obtener historial del alumno (exámenes, videos vistos, clases) para vista detalle
+// @route   GET /api/users/:id/historial
+// @access  Private (propietario o admin)
+export const getHistorialAlumnoJson = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const user = await UserRepo.findUserById(id);
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'Usuario no encontrado'
+      });
+    }
+
+    if (req.user.role !== 'admin' && req.user.id !== id) {
+      return res.status(403).json({
+        success: false,
+        message: 'No tienes permisos para ver este historial'
+      });
+    }
+
+    const historial = await UserRepo.getHistorialAlumno(id);
+    if (!historial) {
+      return res.status(404).json({
+        success: false,
+        message: 'Historial no encontrado'
+      });
+    }
+
+    res.json({
+      success: true,
+      data: {
+        usuario: historial.usuario,
+        examenes: historial.examenes,
+        videosVistos: historial.videosVistos,
+        clasesIngresadas: historial.clasesIngresadas,
+        estadisticas: historial.estadisticas
+      }
+    });
+  } catch (error) {
+    console.error('Error al obtener historial:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error al obtener historial del alumno',
+      error: error.message
+    });
+  }
+};
+
 // @desc    Obtener todos los usuarios (solo admin)
 // @route   GET /api/users
 // @access  Private/Admin
