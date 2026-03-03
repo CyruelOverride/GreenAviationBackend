@@ -16,10 +16,11 @@ if (!process.env.DATABASE_URL) {
   process.exit(1);
 }
 
-// Detectar si es una conexión remota (Render, Heroku, etc.)
+// Detectar si es una conexión remota (Render, Heroku, Supabase, etc.)
 const isRemoteConnection = process.env.DATABASE_URL.includes('render.com') || 
                            process.env.DATABASE_URL.includes('herokuapp.com') ||
-                           process.env.DATABASE_URL.includes('amazonaws.com');
+                           process.env.DATABASE_URL.includes('amazonaws.com') ||
+                           process.env.DATABASE_URL.includes('supabase.co');
 
 // Limpiar y validar DATABASE_URL
 let databaseUrl = process.env.DATABASE_URL;
