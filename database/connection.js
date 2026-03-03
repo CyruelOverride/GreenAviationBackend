@@ -1,8 +1,16 @@
 import pkg from 'pg';
 import dotenv from 'dotenv';
+import dns from 'dns';
 
 // Cargar variables de entorno
 dotenv.config();
+
+// Preferir IPv4 para evitar ENETUNREACH en redes sin IPv6 (p. ej. Supabase)
+try {
+  dns.setDefaultResultOrder('ipv4first');
+} catch (_) {
+  // Node < 17.4: ignorar
+}
 
 const { Pool } = pkg;
 
