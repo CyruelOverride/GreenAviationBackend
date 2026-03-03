@@ -1,7 +1,7 @@
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
-import pool from './database/connection.js';
+import db from './database/connection.js';
 import authRoutes from './routes/auth.routes.js';
 import userRoutes from './routes/user.routes.js';
 import flightRoutes from './routes/flight.routes.js';
@@ -58,15 +58,10 @@ app.use((err, req, res, next) => {
   });
 });
 
-// Iniciar servidor
 const PORT = process.env.PORT || 5000;
 
-// Probar conexión a PostgreSQL antes de iniciar el servidor
-pool.query('SELECT NOW()')
+db.initConnection()
   .then(() => {
-    if (process.env.NODE_ENV !== 'production') {
-      console.log('✅ Conectado a PostgreSQL');
-    }
     app.listen(PORT, () => {
       console.log(`🚀 Servidor corriendo en puerto ${PORT}`);
       if (process.env.NODE_ENV !== 'production') {
@@ -76,9 +71,6 @@ pool.query('SELECT NOW()')
   })
   .catch((error) => {
     console.error('❌ Error conectando a PostgreSQL:', error.message);
-    if (process.env.NODE_ENV === 'production') {
-      console.error('   Verifica la configuración de DATABASE_URL');
-    }
     process.exit(1);
   });
 
