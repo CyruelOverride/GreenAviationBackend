@@ -14,7 +14,9 @@ if (!process.env.DATABASE_URL) {
 const isRemoteConnection = process.env.DATABASE_URL.includes('render.com') ||
   process.env.DATABASE_URL.includes('herokuapp.com') ||
   process.env.DATABASE_URL.includes('amazonaws.com') ||
-  process.env.DATABASE_URL.includes('supabase.co');
+  process.env.DATABASE_URL.includes('supabase.co') ||
+  process.env.DATABASE_URL.includes('supabase.com') ||
+  process.env.DATABASE_URL.includes('pooler.supabase');
 
 let databaseUrl = process.env.DATABASE_URL.trim();
 
@@ -76,6 +78,16 @@ export async function initConnection() {
         const [{ address }] = await dns.promises.lookup(hostname, { family: 4 });
         if (address) poolConfig.host = address;
       } catch (e2) {
+        if (hostname.includes('supabase.co') && !hostname.includes('pooler')) {
+          console.error('');
+          console.error('❌ Este host de Supabase (conexión directa) solo tiene IPv6 y tu red no soporta IPv6.');
+          console.error('   Solución: usa la URL del SESSION POOLER (IPv4 compatible):');
+          console.error('   1. Supabase Dashboard → tu proyecto → Project Settings → Database');
+          console.error('   2. En "Connection pooling" elige "Session" y copia la URI.');
+          console.error('   3. Reemplaza DATABASE_URL en .env por esa URI (puerto 6543, host tipo ...pooler.supabase.com).');
+          console.error('');
+          throw new Error('Usa Session Pooler de Supabase para redes IPv4. Ver instrucciones arriba.');
+        }
         console.warn('⚠️ No se pudo resolver IPv4 para', hostname, '- se usará hostname (puede fallar si tu red solo tiene IPv6).');
       }
     }
