@@ -49,19 +49,35 @@ try {
 let pool = null;
 
 /**
- * Inicializa la conexión: resuelve el host a IPv4 (evita ENETUNREACH en redes sin IPv6)
- * y crea el pool. Debe llamarse antes de levantar el servidor.
+ * Inicializa la conexión: fuerza uso de IPv4 para evitar ENETUNREACH en redes sin IPv6.
+ * Debe llamarse antes de levantar el servidor.
  */
 export async function initConnection() {
   if (pool) return pool;
+
+  // En Node 17+ el resolver prefiere IPv6; muchas redes no tienen IPv6 → ENETUNREACH.
+  // Forzar IPv4 primero para que pg use una IP alcanzable.
+  if (typeof dns.setDefaultResultOrder === 'function') {
+    dns.setDefaultResultOrder('ipv4first');
+  }
 
   const hostname = poolConfig.host;
   if (isRemoteConnection) {
     try {
       const ips = await dns.promises.resolve4(hostname);
-      if (ips.length) poolConfig.host = ips[0];
+      if (ips.length) {
+        poolConfig.host = ips[0];
+        if (process.env.NODE_ENV !== 'production') {
+          console.log('📡 Host resuelto a IPv4:', poolConfig.host);
+        }
+      }
     } catch (e) {
-      console.warn('⚠️ No se pudo resolver IPv4, se usará el hostname:', hostname);
+      try {
+        const [{ address }] = await dns.promises.lookup(hostname, { family: 4 });
+        if (address) poolConfig.host = address;
+      } catch (e2) {
+        console.warn('⚠️ No se pudo resolver IPv4 para', hostname, '- se usará hostname (puede fallar si tu red solo tiene IPv6).');
+      }
     }
   }
 
