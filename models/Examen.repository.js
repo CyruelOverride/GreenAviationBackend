@@ -242,7 +242,22 @@ export const finalizarExamen = async (examenId) => {
        RETURNING *`,
       [puntaje, examenId]
     );
-    
+
+    const usuarioId = updateResult.rows[0].usuario_id;
+    // Calcular progreso del alumno: % de capítulos con examen aprobado (>= 90%). Total 13 capítulos.
+    const progressResult = await client.query(
+      `SELECT COUNT(DISTINCT capitulo)::INTEGER as capitulos_aprobados
+       FROM examen
+       WHERE usuario_id = $1 AND estado = 'COMPLETADO' AND puntaje >= 90`,
+      [usuarioId]
+    );
+    const capitulosAprobados = progressResult.rows[0].capitulos_aprobados;
+    const progreso = Math.min(100, Math.round((capitulosAprobados / 13) * 100));
+    await client.query(
+      'UPDATE users SET progreso = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2',
+      [progreso, usuarioId]
+    );
+
     await client.query('COMMIT');
     
     // Obtener el examen completo con preguntas, opciones y respuestas seleccionadas

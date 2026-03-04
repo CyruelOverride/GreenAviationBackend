@@ -20,6 +20,7 @@ const mapRowToRecurso = (row) => {
     extension: row.extension,
     activo: row.activo,
     orden: row.orden,
+    esParaBlog: row.es_para_blog,
     creadoPor: row.creado_por,
     createdAt: row.created_at,
     updatedAt: row.updated_at
@@ -31,11 +32,17 @@ const mapRowToRecurso = (row) => {
 // @access  Public (para usuarios autenticados)
 export const getRecursos = async (req, res) => {
   try {
-    const { categoria, tipo, soloActivos } = req.query;
-    
+    const { categoria, tipo, soloActivos, esParaBlog } = req.query;
+
     let sql = 'SELECT * FROM recursos WHERE 1=1';
     const params = [];
     let paramCount = 1;
+
+    // Filtro por contexto: por defecto solo recursos adicionales (es_para_blog = false)
+    const paraBlog = esParaBlog === 'true';
+    sql += ` AND es_para_blog = $${paramCount}`;
+    params.push(paraBlog);
+    paramCount++;
 
     // Solo mostrar activos para no-admins
     if (soloActivos === 'true' || req.user.role !== 'admin') {
@@ -108,7 +115,7 @@ export const getRecursoById = async (req, res) => {
 // @access  Private/Admin
 export const createRecurso = async (req, res) => {
   try {
-    const { nombre, descripcion, tipo, categoria, rutaOUrl, tamano, extension, orden } = req.body;
+    const { nombre, descripcion, tipo, categoria, rutaOUrl, tamano, extension, orden, esParaBlog } = req.body;
 
     if (!nombre || !tipo || !rutaOUrl) {
       return res.status(400).json({
@@ -118,8 +125,8 @@ export const createRecurso = async (req, res) => {
     }
 
     const result = await query(
-      `INSERT INTO recursos (nombre, descripcion, tipo, categoria, ruta_o_url, tamano, extension, orden, creado_por)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+      `INSERT INTO recursos (nombre, descripcion, tipo, categoria, ruta_o_url, tamano, extension, orden, es_para_blog, creado_por)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
        RETURNING *`,
       [
         nombre,
@@ -130,6 +137,7 @@ export const createRecurso = async (req, res) => {
         tamano || null,
         extension || null,
         orden || 0,
+        esParaBlog === true,
         req.user.id
       ]
     );
@@ -160,7 +168,7 @@ export const uploadRecurso = async (req, res) => {
       });
     }
 
-    const { nombre, descripcion, categoria } = req.body;
+    const { nombre, descripcion, categoria, esParaBlog } = req.body;
     const file = req.file;
 
     // La ruta relativa para el frontend
@@ -169,8 +177,8 @@ export const uploadRecurso = async (req, res) => {
     const tamano = formatFileSize(file.size);
 
     const result = await query(
-      `INSERT INTO recursos (nombre, descripcion, tipo, categoria, ruta_o_url, tamano, extension, creado_por)
-       VALUES ($1, $2, 'archivo', $3, $4, $5, $6, $7)
+      `INSERT INTO recursos (nombre, descripcion, tipo, categoria, ruta_o_url, tamano, extension, es_para_blog, creado_por)
+       VALUES ($1, $2, 'archivo', $3, $4, $5, $6, $7, $8)
        RETURNING *`,
       [
         nombre || file.originalname,
@@ -179,6 +187,7 @@ export const uploadRecurso = async (req, res) => {
         rutaRelativa,
         tamano,
         extension,
+        esParaBlog === true,
         req.user.id
       ]
     );
@@ -202,7 +211,7 @@ export const uploadRecurso = async (req, res) => {
 // @access  Private/Admin
 export const updateRecurso = async (req, res) => {
   try {
-    const { nombre, descripcion, tipo, categoria, rutaOUrl, activo, orden } = req.body;
+    const { nombre, descripcion, tipo, categoria, rutaOUrl, activo, orden, esParaBlog } = req.body;
 
     const existing = await query('SELECT * FROM recursos WHERE id = $1', [req.params.id]);
     if (existing.rows.length === 0) {
@@ -211,6 +220,8 @@ export const updateRecurso = async (req, res) => {
         message: 'Recurso no encontrado'
       });
     }
+
+    const newEsParaBlog = esParaBlog !== undefined ? !!esParaBlog : existing.rows[0].es_para_blog;
 
     const result = await query(
       `UPDATE recursos SET 
@@ -221,10 +232,11 @@ export const updateRecurso = async (req, res) => {
         ruta_o_url = COALESCE($5, ruta_o_url),
         activo = COALESCE($6, activo),
         orden = COALESCE($7, orden),
+        es_para_blog = $8,
         updated_at = CURRENT_TIMESTAMP
-       WHERE id = $8
+       WHERE id = $9
        RETURNING *`,
-      [nombre, descripcion, tipo, categoria, rutaOUrl, activo, orden, req.params.id]
+      [nombre, descripcion, tipo, categoria, rutaOUrl, activo, orden, newEsParaBlog, req.params.id]
     );
 
     res.json({
@@ -287,12 +299,16 @@ export const deleteRecurso = async (req, res) => {
 // @access  Private
 export const getCategorias = async (req, res) => {
   try {
+    const { esParaBlog } = req.query;
+    const paraBlog = esParaBlog === 'true';
+
     const result = await query(
       `SELECT DISTINCT categoria, COUNT(*) as count 
        FROM recursos 
-       WHERE activo = true 
+       WHERE activo = true AND es_para_blog = $1
        GROUP BY categoria 
-       ORDER BY categoria`
+       ORDER BY categoria`,
+      [paraBlog]
     );
 
     res.json({

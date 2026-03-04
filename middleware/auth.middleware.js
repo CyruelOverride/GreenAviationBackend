@@ -46,6 +46,24 @@ export const authenticate = async (req, res, next) => {
   }
 };
 
+// Middleware opcional: si hay token válido pone req.user; si no, req.user = null (no devuelve 401)
+export const optionalAuthenticate = async (req, res, next) => {
+  try {
+    const token = req.headers.authorization?.split(' ')[1];
+    if (!token) {
+      req.user = null;
+      return next();
+    }
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const user = await UserRepo.findUserById(decoded.id);
+    req.user = user || null;
+    next();
+  } catch (error) {
+    req.user = null;
+    next();
+  }
+};
+
 // Middleware para verificar rol de administrador
 export const isAdmin = (req, res, next) => {
   if (req.user && req.user.role === 'admin') {

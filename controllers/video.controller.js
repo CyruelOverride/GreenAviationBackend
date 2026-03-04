@@ -52,11 +52,22 @@ export const getVideoProgress = async (req, res) => {
       };
     });
 
+    // Progreso del alumno (0-100): calculado desde exámenes aprobados (>= 90%) por capítulo. 13 capítulos.
+    const progressResult = await query(
+      `SELECT COUNT(DISTINCT capitulo)::INTEGER as capitulos_aprobados
+       FROM examen
+       WHERE usuario_id = $1 AND estado = 'COMPLETADO' AND puntaje >= 90`,
+      [userId]
+    );
+    const capitulosAprobados = progressResult.rows[0]?.capitulos_aprobados ?? 0;
+    const progreso = Math.min(100, Math.round((capitulosAprobados / 13) * 100));
+
     res.json({
       success: true,
       data: {
         videosVistos,
-        examenesPorCapitulo
+        examenesPorCapitulo,
+        progreso
       }
     });
   } catch (error) {
