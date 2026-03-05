@@ -116,6 +116,12 @@ export const createUser = async (userData) => {
     curso = 'Piloto Privado'
   } = userData;
 
+  // Normalizar valores para evitar violaciones de CHECK (vacíos -> null)
+  const safeStr = (v) => (v === '' || v === undefined ? null : v);
+  const validRole = role === 'admin' ? 'admin' : 'alumno';
+  const validEstado = estado === 'Finalizado' ? 'Finalizado' : 'Cursando';
+  const validSexo = sexo === 'Mujer' ? 'Mujer' : (sexo === 'Hombre' ? 'Hombre' : null);
+
   // Hash de contraseña
   const salt = await bcrypt.genSalt(10);
   const hashedPassword = await bcrypt.hash(password, salt);
@@ -130,27 +136,27 @@ export const createUser = async (userData) => {
     ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21)
     RETURNING *`,
     [
-      email.toLowerCase(),
+      (email || '').toLowerCase(),
       hashedPassword,
-      role,
-      nombre,
-      apellido,
-      cedula,
-      numeroTelefono,
-      telefono,
-      celular,
-      fechaNac,
-      direccion,
-      departamento,
-      ciudad,
-      sexo,
-      contactoEmergencia,
-      nombreEmergencia,
-      emergenciaMedica,
+      validRole,
+      safeStr(nombre),
+      safeStr(apellido),
+      safeStr(cedula),
+      safeStr(numeroTelefono),
+      safeStr(telefono),
+      safeStr(celular),
+      fechaNac || null,
+      safeStr(direccion),
+      safeStr(departamento),
+      safeStr(ciudad),
+      validSexo,
+      safeStr(contactoEmergencia),
+      safeStr(nombreEmergencia),
+      safeStr(emergenciaMedica),
       fechaInicioCurso || new Date(),
-      estado,
-      progreso,
-      curso
+      validEstado,
+      progreso ?? 0,
+      curso || 'Piloto Privado'
     ]
   );
 
