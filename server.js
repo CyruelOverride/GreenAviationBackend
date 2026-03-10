@@ -10,7 +10,6 @@ import preguntaRoutes from './routes/pregunta.routes.js';
 import opcionRoutes from './routes/opcion.routes.js';
 import videoRoutes from './routes/video.routes.js';
 import recursoRoutes from './routes/recurso.routes.js';
-import articuloRoutes from './routes/articulo.routes.js';
 import claseOnlineRoutes from './routes/claseOnline.routes.js';
 
 // Cargar variables de entorno
@@ -32,7 +31,6 @@ app.use('/api/preguntas', preguntaRoutes);
 app.use('/api/opciones', opcionRoutes);
 app.use('/api/videos', videoRoutes);
 app.use('/api/recursos', recursoRoutes);
-app.use('/api/articulos', articuloRoutes);
 app.use('/api/clases-online', claseOnlineRoutes);
 
 // Ruta de prueba

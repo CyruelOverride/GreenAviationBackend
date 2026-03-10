@@ -47,8 +47,8 @@ export const getVideoProgress = async (req, res) => {
     videoResult.rows.forEach(row => {
       videosVistos[row.video_numero] = {
         startedAt: row.started_at,
-        // El video cuenta como "visto" si pasaron 20 minutos desde que se empezó
-        completado: new Date() - new Date(row.started_at) >= 20 * 60 * 1000
+        // El video cuenta como "visto" si pasaron 10 minutos desde que se empezó
+        completado: new Date() - new Date(row.started_at) >= 10 * 60 * 1000
       };
     });
 
@@ -182,8 +182,8 @@ export const checkExamUnlock = async (req, res) => {
     const ahora = new Date();
     const minutosTranscurridos = (ahora - startedAt) / (1000 * 60);
 
-    if (minutosTranscurridos < 20) {
-      const minutosRestantes = Math.ceil(20 - minutosTranscurridos);
+    if (minutosTranscurridos < 10) {
+      const minutosRestantes = Math.ceil(10 - minutosTranscurridos);
       return res.json({
         success: true,
         data: {
