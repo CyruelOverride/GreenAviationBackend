@@ -1,4 +1,91 @@
-import { query } from '../database/connection.js';
+import { query, getClient } from '../database/connection.js';
+
+const mapPreguntaConOpciones = (rows) => {
+  if (!rows || rows.length === 0) return null;
+
+  const pregunta = {
+    id: rows[0].pregunta_id,
+    enunciado: rows[0].enunciado,
+    capitulo: rows[0].capitulo,
+    activa: rows[0].activa,
+    fechaCreacion: rows[0].fecha_creacion,
+    opciones: []
+  };
+
+  rows.forEach((row) => {
+    if (row.opcion_id) {
+      pregunta.opciones.push({
+        id: row.opcion_id,
+        texto: row.texto,
+        esCorrecta: row.es_correcta
+      });
+    }
+  });
+
+  return pregunta;
+};
+
+/**
+ * Crear pregunta con sus opciones en una transacción
+ * @param {Object} data
+ * @param {string} data.enunciado
+ * @param {string|number} data.capitulo
+ * @param {boolean} [data.activa=true]
+ * @param {Array<{texto: string, esCorrecta: boolean}>} data.opciones
+ * @returns {Promise<Object>}
+ */
+export const createPregunta = async (data) => {
+  const client = await getClient();
+
+  try {
+    await client.query('BEGIN');
+
+    const { enunciado, capitulo, activa = true, opciones } = data;
+
+    const preguntaResult = await client.query(
+      `INSERT INTO pregunta (enunciado, capitulo, activa)
+       VALUES ($1, $2, $3)
+       RETURNING id`,
+      [enunciado, capitulo, activa]
+    );
+
+    const preguntaId = preguntaResult.rows[0].id;
+
+    for (const opcion of opciones) {
+      await client.query(
+        `INSERT INTO opcion (pregunta_id, texto, es_correcta)
+         VALUES ($1, $2, $3)`,
+        [preguntaId, opcion.texto, opcion.esCorrecta]
+      );
+    }
+
+    const preguntaConOpcionesResult = await client.query(
+      `SELECT
+        p.id AS pregunta_id,
+        p.enunciado,
+        p.capitulo,
+        p.activa,
+        p.fecha_creacion,
+        o.id AS opcion_id,
+        o.texto,
+        o.es_correcta
+      FROM pregunta p
+      LEFT JOIN opcion o ON o.pregunta_id = p.id
+      WHERE p.id = $1
+      ORDER BY o.id`,
+      [preguntaId]
+    );
+
+    await client.query('COMMIT');
+
+    return mapPreguntaConOpciones(preguntaConOpcionesResult.rows);
+  } catch (error) {
+    await client.query('ROLLBACK');
+    throw error;
+  } finally {
+    client.release();
+  }
+};
 
 /**
  * Obtener todas las preguntas de un capítulo con sus opciones

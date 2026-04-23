@@ -1,5 +1,60 @@
 import * as PreguntaRepo from '../models/Pregunta.repository.js';
 
+const validarPayloadPregunta = ({ enunciado, capitulo, opciones }) => {
+  if (!capitulo) return 'El capítulo es requerido';
+  if (!enunciado || !enunciado.trim()) return 'El enunciado es requerido';
+  if (!Array.isArray(opciones) || opciones.length < 2) {
+    return 'Debe incluir al menos 2 opciones';
+  }
+
+  const opcionesInvalidas = opciones.some((opcion) => !opcion?.texto || !opcion.texto.trim());
+  if (opcionesInvalidas) return 'Todas las opciones deben tener texto';
+
+  const correctas = opciones.filter((opcion) => opcion.esCorrecta === true).length;
+  if (correctas !== 1) return 'Debe existir exactamente una opción correcta';
+
+  return null;
+};
+
+// @desc    Crear una pregunta con opciones
+// @route   POST /api/preguntas
+// @access  Private/Admin
+export const createPregunta = async (req, res) => {
+  try {
+    const { enunciado, capitulo, activa, opciones } = req.body;
+
+    const errorValidacion = validarPayloadPregunta({ enunciado, capitulo, opciones });
+    if (errorValidacion) {
+      return res.status(400).json({
+        success: false,
+        message: errorValidacion
+      });
+    }
+
+    const pregunta = await PreguntaRepo.createPregunta({
+      enunciado: enunciado.trim(),
+      capitulo: String(capitulo),
+      activa: activa !== undefined ? Boolean(activa) : true,
+      opciones: opciones.map((opcion) => ({
+        texto: opcion.texto.trim(),
+        esCorrecta: opcion.esCorrecta === true
+      }))
+    });
+
+    res.status(201).json({
+      success: true,
+      message: 'Pregunta creada exitosamente',
+      data: { pregunta }
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: 'Error al crear pregunta',
+      error: error.message
+    });
+  }
+};
+
 // @desc    Obtener todas las preguntas de un capítulo
 // @route   GET /api/preguntas?capitulo=X
 // @access  Private
