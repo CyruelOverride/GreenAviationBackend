@@ -16,16 +16,49 @@ const mapRowToExamen = (row) => {
   };
 };
 
-const mapRowToPregunta = (row) => {
+const mapRowToHabilitacion = (row) => {
   if (!row) return null;
-  
+
   return {
-    preguntaId: row.pregunta_id,
-    enunciado: row.enunciado,
-    opcionId: row.opcion_id,
-    texto: row.texto,
-    esCorrecta: row.es_correcta
+    capitulo: String(row.capitulo),
+    habilitado: row.habilitado === true,
+    updatedAt: row.updated_at
   };
+};
+
+export const getHabilitacionesCapitulos = async () => {
+  const result = await query(
+    `SELECT capitulo, habilitado, updated_at
+     FROM examen_capitulo_config
+     ORDER BY capitulo ASC`
+  );
+
+  return result.rows.map((row) => mapRowToHabilitacion(row));
+};
+
+export const updateHabilitacionCapitulo = async (capitulo, habilitado) => {
+  const result = await query(
+    `INSERT INTO examen_capitulo_config (capitulo, habilitado, updated_at)
+     VALUES ($1, $2, CURRENT_TIMESTAMP)
+     ON CONFLICT (capitulo)
+     DO UPDATE SET habilitado = EXCLUDED.habilitado, updated_at = CURRENT_TIMESTAMP
+     RETURNING capitulo, habilitado, updated_at`,
+    [capitulo, habilitado]
+  );
+
+  return mapRowToHabilitacion(result.rows[0]);
+};
+
+export const isCapituloHabilitado = async (capitulo) => {
+  const result = await query(
+    `SELECT habilitado
+     FROM examen_capitulo_config
+     WHERE capitulo = $1`,
+    [capitulo]
+  );
+
+  if (result.rows.length === 0) return false;
+  return result.rows[0].habilitado === true;
 };
 
 /**
@@ -43,7 +76,20 @@ export const createExamenAleatorio = async (examenData) => {
   try {
     await client.query('BEGIN');
     
-    const { usuarioId, nombre, capitulo, numPreguntas = 15, tiempoLimite } = examenData;
+    const { usuarioId, nombre, capitulo, numPreguntas = 15, tiempoLimite, esAdmin = false } = examenData;
+
+    if (!esAdmin) {
+      const habilitacionResult = await client.query(
+        `SELECT habilitado
+         FROM examen_capitulo_config
+         WHERE capitulo = $1`,
+        [capitulo]
+      );
+
+      if (habilitacionResult.rows.length === 0 || habilitacionResult.rows[0].habilitado !== true) {
+        throw new Error(`EXAMEN_CAPITULO_BLOQUEADO:${capitulo}`);
+      }
+    }
     
     const examenResult = await client.query(
       `INSERT INTO examen (usuario_id, nombre, capitulo, estado, tiempo_limite)

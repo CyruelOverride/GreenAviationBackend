@@ -5,9 +5,11 @@ import {
   getExamenes,
   responderPregunta,
   finalizarExamen,
-  getEstadisticas
+  getEstadisticas,
+  getHabilitaciones,
+  updateHabilitacion
 } from '../controllers/examen.controller.js';
-import { authenticate, isOwnerOrAdmin } from '../middleware/auth.middleware.js';
+import { authenticate, isAdmin } from '../middleware/auth.middleware.js';
 
 const router = express.Router();
 
@@ -16,6 +18,8 @@ router.use(authenticate);
 
 // Rutas de estadísticas
 router.get('/stats', getEstadisticas);
+router.get('/habilitaciones', getHabilitaciones);
+router.put('/habilitaciones/:capitulo', isAdmin, updateHabilitacion);
 
 // Rutas CRUD
 router.get('/', getExamenes);
