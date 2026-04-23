@@ -19,7 +19,7 @@ router.use(authenticate);
 // Rutas de estadísticas
 router.get('/stats', getEstadisticas);
 router.get('/habilitaciones', getHabilitaciones);
-router.put('/habilitaciones/:capitulo', isAdmin, updateHabilitacion);
+router.put('/habilitaciones/:capituloId', isAdmin, updateHabilitacion);
 
 // Rutas CRUD
 router.get('/', getExamenes);

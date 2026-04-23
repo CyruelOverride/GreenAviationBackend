@@ -17,18 +17,19 @@ export const getVideoProgress = async (req, res) => {
       [userId]
     );
 
-    // Obtener los exámenes completados con sus puntajes por capítulo
     const examenesResult = await query(
-      `SELECT DISTINCT ON (capitulo) 
-        capitulo, 
-        puntaje, 
-        estado,
-        fecha_finalizacion
-       FROM examen 
-       WHERE usuario_id = $1 
-         AND estado = 'COMPLETADO'
-         AND puntaje IS NOT NULL
-       ORDER BY capitulo, puntaje DESC`,
+      `SELECT DISTINCT ON (c.numero_curso)
+        c.numero_curso::text AS capitulo,
+        e.puntaje,
+        e.estado,
+        e.fecha_finalizacion
+       FROM examen e
+       JOIN capitulo c ON c.id = e.capitulo_id
+       WHERE e.usuario_id = $1
+         AND e.estado = 'COMPLETADO'
+         AND e.puntaje IS NOT NULL
+         AND c.numero_curso IS NOT NULL
+       ORDER BY c.numero_curso, e.puntaje DESC`,
       [userId]
     );
 
@@ -54,9 +55,13 @@ export const getVideoProgress = async (req, res) => {
 
     // Progreso del alumno (0-100): calculado desde exámenes aprobados (>= 90%) por capítulo. 13 capítulos.
     const progressResult = await query(
-      `SELECT COUNT(DISTINCT capitulo)::INTEGER as capitulos_aprobados
-       FROM examen
-       WHERE usuario_id = $1 AND estado = 'COMPLETADO' AND puntaje >= 90`,
+      `SELECT COUNT(DISTINCT c.numero_curso)::INTEGER as capitulos_aprobados
+       FROM examen e
+       JOIN capitulo c ON c.id = e.capitulo_id
+       WHERE e.usuario_id = $1
+         AND e.estado = 'COMPLETADO'
+         AND e.puntaje >= 90
+         AND c.numero_curso IS NOT NULL`,
       [userId]
     );
     const capitulosAprobados = progressResult.rows[0]?.capitulos_aprobados ?? 0;

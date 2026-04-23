@@ -1,7 +1,10 @@
 import * as PreguntaRepo from '../models/Pregunta.repository.js';
+import * as CapituloRepo from '../models/Capitulo.repository.js';
 
-const validarPayloadPregunta = ({ enunciado, capitulo, opciones }) => {
-  if (!capitulo) return 'El capítulo es requerido';
+const validarPayloadPregunta = ({ enunciado, capituloId, opciones }) => {
+  if (capituloId === undefined || capituloId === null || capituloId === '') {
+    return 'capituloId es requerido';
+  }
   if (!enunciado || !enunciado.trim()) return 'El enunciado es requerido';
   if (!Array.isArray(opciones) || opciones.length < 2) {
     return 'Debe incluir al menos 2 opciones';
@@ -16,14 +19,14 @@ const validarPayloadPregunta = ({ enunciado, capitulo, opciones }) => {
   return null;
 };
 
-// @desc    Crear una pregunta con opciones
-// @route   POST /api/preguntas
-// @access  Private/Admin
 export const createPregunta = async (req, res) => {
   try {
-    const { enunciado, capitulo, activa, opciones } = req.body;
+    const { enunciado, capituloId: rawCid, activa, opciones } = req.body;
 
-    const errorValidacion = validarPayloadPregunta({ enunciado, capitulo, opciones });
+    let capituloId = rawCid != null ? parseInt(rawCid, 10) : null;
+    if (Number.isNaN(capituloId)) capituloId = null;
+
+    const errorValidacion = validarPayloadPregunta({ enunciado, capituloId, opciones });
     if (errorValidacion) {
       return res.status(400).json({
         success: false,
@@ -31,9 +34,17 @@ export const createPregunta = async (req, res) => {
       });
     }
 
+    const cap = await CapituloRepo.getCapituloById(capituloId);
+    if (!cap) {
+      return res.status(400).json({
+        success: false,
+        message: 'Capítulo no encontrado'
+      });
+    }
+
     const pregunta = await PreguntaRepo.createPregunta({
       enunciado: enunciado.trim(),
-      capitulo: String(capitulo),
+      capituloId,
       activa: activa !== undefined ? Boolean(activa) : true,
       opciones: opciones.map((opcion) => ({
         texto: opcion.texto.trim(),
@@ -55,21 +66,35 @@ export const createPregunta = async (req, res) => {
   }
 };
 
-// @desc    Obtener todas las preguntas de un capítulo
-// @route   GET /api/preguntas?capitulo=X
-// @access  Private
 export const getPreguntasByCapitulo = async (req, res) => {
   try {
-    const { capitulo } = req.query;
+    let capituloId = req.query.capituloId;
+    if (capituloId != null) {
+      capituloId = parseInt(capituloId, 10);
+      if (Number.isNaN(capituloId)) {
+        return res.status(400).json({
+          success: false,
+          message: 'capituloId inválido'
+        });
+      }
+    }
 
-    if (!capitulo) {
+    if (capituloId == null && req.query.capitulo != null) {
+      const n = parseInt(String(req.query.capitulo), 10);
+      if (!Number.isNaN(n)) {
+        const c = await CapituloRepo.getCapituloByNumeroCurso(n);
+        if (c) capituloId = c.id;
+      }
+    }
+
+    if (capituloId == null) {
       return res.status(400).json({
         success: false,
-        message: 'El parámetro capitulo es requerido'
+        message: 'Indique capituloId (o capitulo 1–13 como compatibilidad)'
       });
     }
 
-    const preguntas = await PreguntaRepo.getPreguntasByCapitulo(capitulo);
+    const preguntas = await PreguntaRepo.getPreguntasByCapituloId(capituloId);
 
     res.json({
       success: true,
@@ -85,9 +110,6 @@ export const getPreguntasByCapitulo = async (req, res) => {
   }
 };
 
-// @desc    Actualizar una pregunta
-// @route   PUT /api/preguntas/:id
-// @access  Private/Admin
 export const updatePregunta = async (req, res) => {
   try {
     const { enunciado, activa } = req.body;
@@ -118,9 +140,6 @@ export const updatePregunta = async (req, res) => {
   }
 };
 
-// @desc    Actualizar una opción
-// @route   PUT /api/opciones/:id
-// @access  Private/Admin
 export const updateOpcion = async (req, res) => {
   try {
     const { texto, esCorrecta } = req.body;
@@ -150,4 +169,3 @@ export const updateOpcion = async (req, res) => {
     });
   }
 };
-

@@ -1,33 +1,53 @@
 import * as ExamenRepo from '../models/Examen.repository.js';
+import * as CapituloRepo from '../models/Capitulo.repository.js';
 
-// @desc    Crear un examen aleatorio por capítulo
-// @route   POST /api/examenes
-// @access  Private
 export const createExamen = async (req, res) => {
   try {
-    const { nombre, capitulo, numPreguntas, tiempoLimite } = req.body;
-    const usuarioId = req.user.id; // Del middleware de autenticación
+    const { nombre, numPreguntas, tiempoLimite } = req.body;
+    let capituloId =
+      req.body.capituloId != null ? parseInt(req.body.capituloId, 10) : null;
+    if (Number.isNaN(capituloId)) capituloId = null;
 
-    // Validaciones
-    if (!capitulo) {
+    if (capituloId == null && req.body.capitulo != null) {
+      const n = parseInt(String(req.body.capitulo), 10);
+      if (!Number.isNaN(n)) {
+        const c = await CapituloRepo.getCapituloByNumeroCurso(n);
+        if (c) capituloId = c.id;
+      }
+    }
+
+    const usuarioId = req.user.id;
+
+    if (capituloId == null) {
       return res.status(400).json({
         success: false,
-        message: 'El capítulo es requerido'
+        message: 'capituloId es requerido (o capitulo numérico 1–13 como compatibilidad)'
       });
     }
 
-    if (numPreguntas && (numPreguntas < 1 || numPreguntas > 50)) {
+    if (numPreguntas != null && numPreguntas !== '') {
+      const np = parseInt(numPreguntas, 10);
+      if (Number.isNaN(np) || np < 1 || np > 100) {
+        return res.status(400).json({
+          success: false,
+          message: 'El número de preguntas debe estar entre 1 y 100'
+        });
+      }
+    }
+
+    const cap = await CapituloRepo.getCapituloById(capituloId);
+    if (!cap) {
       return res.status(400).json({
         success: false,
-        message: 'El número de preguntas debe estar entre 1 y 50'
+        message: 'Capítulo no encontrado'
       });
     }
 
     const examen = await ExamenRepo.createExamenAleatorio({
       usuarioId,
-      nombre: nombre || `Examen Capítulo ${capitulo}`,
-      capitulo: String(capitulo),
-      numPreguntas: numPreguntas || 15,
+      capituloId,
+      nombre: nombre || cap.nombre,
+      numPreguntas,
       tiempoLimite,
       esAdmin: req.user.role === 'admin'
     });
@@ -39,10 +59,16 @@ export const createExamen = async (req, res) => {
     });
   } catch (error) {
     if (error.message?.startsWith('EXAMEN_CAPITULO_BLOQUEADO:')) {
-      const capituloBloqueado = error.message.split(':')[1];
       return res.status(403).json({
         success: false,
-        message: `El examen del capítulo ${capituloBloqueado} está bloqueado por administración`
+        message: 'Este examen está bloqueado por administración'
+      });
+    }
+
+    if (error.message === 'CAPITULO_NO_ENCONTRADO') {
+      return res.status(400).json({
+        success: false,
+        message: 'Capítulo no encontrado'
       });
     }
 
@@ -54,9 +80,6 @@ export const createExamen = async (req, res) => {
   }
 };
 
-// @desc    Obtener habilitaciones de capítulos de examen
-// @route   GET /api/examenes/habilitaciones
-// @access  Private
 export const getHabilitaciones = async (req, res) => {
   try {
     const habilitaciones = await ExamenRepo.getHabilitacionesCapitulos();
@@ -74,18 +97,15 @@ export const getHabilitaciones = async (req, res) => {
   }
 };
 
-// @desc    Actualizar habilitación de un capítulo
-// @route   PUT /api/examenes/habilitaciones/:capitulo
-// @access  Private/Admin
 export const updateHabilitacion = async (req, res) => {
   try {
-    const capitulo = parseInt(req.params.capitulo, 10);
+    const capituloId = parseInt(req.params.capituloId, 10);
     const { habilitado } = req.body;
 
-    if (Number.isNaN(capitulo) || capitulo < 1 || capitulo > 13) {
+    if (Number.isNaN(capituloId) || capituloId < 1) {
       return res.status(400).json({
         success: false,
-        message: 'Capítulo inválido. Debe estar entre 1 y 13'
+        message: 'capituloId inválido'
       });
     }
 
@@ -96,25 +116,29 @@ export const updateHabilitacion = async (req, res) => {
       });
     }
 
-    const configuracion = await ExamenRepo.updateHabilitacionCapitulo(capitulo, habilitado);
+    const configuracion = await ExamenRepo.updateHabilitacionCapitulo(capituloId, habilitado);
+
+    if (!configuracion) {
+      return res.status(404).json({
+        success: false,
+        message: 'Capítulo no encontrado'
+      });
+    }
 
     res.json({
       success: true,
-      message: `Capítulo ${capitulo} ${habilitado ? 'habilitado' : 'bloqueado'} exitosamente`,
+      message: `${habilitado ? 'Habilitado' : 'Bloqueado'}: ${configuracion.nombre || capituloId}`,
       data: { configuracion }
     });
   } catch (error) {
     res.status(500).json({
       success: false,
-      message: 'Error al actualizar habilitación del capítulo',
+      message: 'Error al actualizar habilitación',
       error: error.message
     });
   }
 };
 
-// @desc    Obtener un examen por ID
-// @route   GET /api/examenes/:id
-// @access  Private
 export const getExamen = async (req, res) => {
   try {
     const examen = await ExamenRepo.getExamenById(req.params.id);
@@ -126,7 +150,6 @@ export const getExamen = async (req, res) => {
       });
     }
 
-    // Verificar que el examen pertenezca al usuario (o sea admin)
     if (examen.usuarioId !== req.user.id && req.user.role !== 'admin') {
       return res.status(403).json({
         success: false,
@@ -147,14 +170,10 @@ export const getExamen = async (req, res) => {
   }
 };
 
-// @desc    Obtener todos los exámenes del usuario
-// @route   GET /api/examenes
-// @access  Private
 export const getExamenes = async (req, res) => {
   try {
-    const usuarioId = req.user.role === 'admin' && req.query.usuarioId 
-      ? req.query.usuarioId 
-      : req.user.id;
+    const usuarioId =
+      req.user.role === 'admin' && req.query.usuarioId ? req.query.usuarioId : req.user.id;
 
     const examenes = await ExamenRepo.getExamenesByUsuario(usuarioId);
 
@@ -172,9 +191,6 @@ export const getExamenes = async (req, res) => {
   }
 };
 
-// @desc    Responder una pregunta del examen
-// @route   PUT /api/examenes/:id/preguntas/:preguntaId
-// @access  Private
 export const responderPregunta = async (req, res) => {
   try {
     const examenId = req.params.id;
@@ -188,7 +204,6 @@ export const responderPregunta = async (req, res) => {
       });
     }
 
-    // Verificar que el examen pertenezca al usuario
     const examen = await ExamenRepo.getExamenById(examenId);
     if (!examen) {
       return res.status(404).json({
@@ -231,14 +246,10 @@ export const responderPregunta = async (req, res) => {
   }
 };
 
-// @desc    Finalizar un examen
-// @route   POST /api/examenes/:id/finalizar
-// @access  Private
 export const finalizarExamen = async (req, res) => {
   try {
     const examenId = req.params.id;
 
-    // Verificar que el examen pertenezca al usuario
     const examen = await ExamenRepo.getExamenById(examenId);
     if (!examen) {
       return res.status(404).json({
@@ -277,14 +288,10 @@ export const finalizarExamen = async (req, res) => {
   }
 };
 
-// @desc    Obtener estadísticas de exámenes
-// @route   GET /api/examenes/stats
-// @access  Private
 export const getEstadisticas = async (req, res) => {
   try {
-    const usuarioId = req.user.role === 'admin' && req.query.usuarioId 
-      ? req.query.usuarioId 
-      : req.user.id;
+    const usuarioId =
+      req.user.role === 'admin' && req.query.usuarioId ? req.query.usuarioId : req.user.id;
 
     const estadisticas = await ExamenRepo.getEstadisticasExamenes(usuarioId);
 
@@ -300,4 +307,3 @@ export const getEstadisticas = async (req, res) => {
     });
   }
 };
-
