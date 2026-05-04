@@ -99,7 +99,7 @@ export const createClaseOnline = async (req, res) => {
 
     // El instructor por defecto es el usuario logueado (si es admin)
     // Si se proporciona instructorId, validar que existe
-    let finalInstructorId = instructorId || req.user.id;
+    let finalInstructorId = instructorId || req.user.sub;
 
     if (instructorId) {
       const instructorExists = await UserRepo.findUserById(instructorId);
