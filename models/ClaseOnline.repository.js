@@ -40,6 +40,7 @@ const mapRowToClaseOnline = async (row) => {
     id: row.id,
     link: row.link,
     linkGrabacion: row.link_grabacion,
+    codigoAcceso: row.codigo_acceso ?? null,
     fechaHoraInicio: row.fecha_hora_inicio,
     fechaHoraFin: row.fecha_hora_fin,
     estado: row.estado,
@@ -63,13 +64,23 @@ export const findClaseOnlineById = async (id) => {
 
 // Buscar clases online con filtros
 export const findClasesOnline = async (filters = {}) => {
-  const { estado, instructorId, alumnoId, fechaDesde, fechaHasta } = filters;
+  const { estado, instructorId, alumnoId, fechaDesde, fechaHasta, modoVistaAlumno } = filters;
   let sql = 'SELECT DISTINCT co.* FROM clases_online co';
   const params = [];
   let paramCount = 1;
 
-  // Si se filtra por alumno, necesitamos hacer JOIN con la tabla de alumnos
-  if (alumnoId) {
+  // Vista alumno: inscrito en la clase O clase ya finalizada / con grabación (visible para todo el alumnado)
+  if (alumnoId && modoVistaAlumno) {
+    sql += ` WHERE (
+      EXISTS (
+        SELECT 1 FROM clases_online_alumnos coa
+        WHERE coa.clase_online_id = co.id AND coa.alumno_id = $${paramCount}
+      )
+      OR co.estado IN ('Terminada', 'Grabacion')
+    )`;
+    params.push(alumnoId);
+    paramCount++;
+  } else if (alumnoId) {
     sql += ' INNER JOIN clases_online_alumnos coa ON co.id = coa.clase_online_id';
     sql += ` WHERE coa.alumno_id = $${paramCount}`;
     params.push(alumnoId);
@@ -120,21 +131,28 @@ export const createClaseOnline = async (claseData) => {
   const {
     link,
     linkGrabacion,
+    codigoAcceso,
     fechaHoraInicio,
     fechaHoraFin,
     estado = 'Pendiente',
     instructorId
   } = claseData;
 
+  const codigoAccesoNorm =
+    codigoAcceso != null && String(codigoAcceso).trim() !== ''
+      ? String(codigoAcceso).trim()
+      : null;
+
   // Insertar clase online
   const result = await query(
     `INSERT INTO clases_online (
-      link, link_grabacion, fecha_hora_inicio, fecha_hora_fin, estado, instructor_id
-    ) VALUES ($1, $2, $3, $4, $5, $6)
+      link, link_grabacion, codigo_acceso, fecha_hora_inicio, fecha_hora_fin, estado, instructor_id
+    ) VALUES ($1, $2, $3, $4, $5, $6, $7)
     RETURNING *`,
     [
       link,
       linkGrabacion || null,
+      codigoAccesoNorm,
       fechaHoraInicio || new Date(),
       fechaHoraFin || null,
       estado,
@@ -154,6 +172,7 @@ export const updateClaseOnline = async (id, claseData) => {
   const allowedFields = {
     link: 'link',
     linkGrabacion: 'link_grabacion',
+    codigoAcceso: 'codigo_acceso',
     fechaHoraInicio: 'fecha_hora_inicio',
     fechaHoraFin: 'fecha_hora_fin',
     estado: 'estado',
@@ -162,8 +181,15 @@ export const updateClaseOnline = async (id, claseData) => {
 
   for (const [key, dbField] of Object.entries(allowedFields)) {
     if (claseData[key] !== undefined) {
+      let val = claseData[key];
+      if (key === 'codigoAcceso') {
+        val =
+          val != null && String(val).trim() !== ''
+            ? String(val).trim()
+            : null;
+      }
       fields.push(`${dbField} = $${paramCount}`);
-      values.push(claseData[key]);
+      values.push(val);
       paramCount++;
     }
   }

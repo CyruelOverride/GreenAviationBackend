@@ -9,9 +9,10 @@ export const getAllClasesOnline = async (req, res) => {
     const { estado, instructorId, alumnoId, fechaDesde, fechaHasta } = req.query;
     const filters = {};
 
-    // Si es alumno, solo puede ver las clases en las que está registrado
+    // Si es alumno: clases en las que está registrado + terminadas/grabaciones del campus (no requieren registro previo)
     if (req.user.role === 'alumno') {
       filters.alumnoId = req.user.id;
+      filters.modoVistaAlumno = true;
     } else {
       if (estado) filters.estado = estado;
       if (instructorId) filters.instructorId = instructorId;
@@ -55,7 +56,9 @@ export const getClaseOnlineById = async (req, res) => {
     // Si es alumno, solo puede ver si está registrado en la clase
     if (req.user.role === 'alumno') {
       const isRegistrado = await ClaseOnlineRepo.isAlumnoRegistrado(clase.id, req.user.id);
-      if (!isRegistrado) {
+      const esHistorialPublico =
+        clase.estado === 'Terminada' || clase.estado === 'Grabacion';
+      if (!isRegistrado && !esHistorialPublico) {
         return res.status(403).json({
           success: false,
           message: 'No tienes permisos para ver esta clase'
@@ -84,6 +87,7 @@ export const createClaseOnline = async (req, res) => {
     const {
       link,
       linkGrabacion,
+      codigoAcceso,
       fechaHoraInicio,
       fechaHoraFin,
       instructorId
@@ -123,6 +127,7 @@ export const createClaseOnline = async (req, res) => {
     const clase = await ClaseOnlineRepo.createClaseOnline({
       link,
       linkGrabacion,
+      codigoAcceso,
       fechaHoraInicio: fechaHoraInicioFinal,
       fechaHoraFin: fechaHoraFin ? new Date(fechaHoraFin) : null,
       estado,
