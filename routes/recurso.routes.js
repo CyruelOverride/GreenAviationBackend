@@ -4,6 +4,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import {
   getRecursos,
+  getRecursosVideosTeorico,
   getRecursoById,
   createRecurso,
   uploadRecurso,
@@ -74,6 +75,7 @@ router.use(authenticate);
 // Rutas públicas para usuarios autenticados
 router.get('/', getRecursos);
 router.get('/categorias', getCategorias);
+router.get('/videos-teorico', getRecursosVideosTeorico);
 router.get('/:id', getRecursoById);
 
 // Rutas solo para admin

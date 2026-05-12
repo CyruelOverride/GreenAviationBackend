@@ -32,7 +32,7 @@ const mapRowToRecurso = (row) => {
 // @access  Public (para usuarios autenticados)
 export const getRecursos = async (req, res) => {
   try {
-    const { categoria, tipo, soloActivos, esParaBlog } = req.query;
+    const { categoria, tipo, soloActivos, esParaBlog, excludeCategoria } = req.query;
 
     let sql = 'SELECT * FROM recursos WHERE 1=1';
     const params = [];
@@ -52,6 +52,12 @@ export const getRecursos = async (req, res) => {
     if (categoria) {
       sql += ` AND categoria = $${paramCount}`;
       params.push(categoria);
+      paramCount++;
+    }
+
+    if (excludeCategoria) {
+      sql += ` AND categoria <> $${paramCount}`;
+      params.push(excludeCategoria);
       paramCount++;
     }
 
@@ -75,6 +81,36 @@ export const getRecursos = async (req, res) => {
     res.status(500).json({
       success: false,
       message: 'Error al obtener recursos',
+      error: error.message
+    });
+  }
+};
+
+// @desc    Videos del curso teórico (recursos categoria videoTeorico)
+// @route   GET /api/recursos/videos-teorico
+// @access  Private (authenticate)
+export const getRecursosVideosTeorico = async (req, res) => {
+  try {
+    const result = await query(
+      `SELECT * FROM recursos
+       WHERE categoria = $1
+         AND activo = true
+         AND es_para_blog = false
+       ORDER BY orden ASC, nombre ASC`,
+      ['videoTeorico']
+    );
+
+    const recursos = result.rows.map(mapRowToRecurso);
+
+    res.json({
+      success: true,
+      count: recursos.length,
+      data: { recursos }
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: 'Error al obtener videos del curso teórico',
       error: error.message
     });
   }
