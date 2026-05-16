@@ -65,6 +65,13 @@ export const createExamen = async (req, res) => {
       });
     }
 
+    if (error.message === 'LIMITE_INSTANCIAS_ALCANZADO') {
+      return res.status(403).json({
+        success: false,
+        message: 'Ya utilizaste todos los intentos disponibles para este examen'
+      });
+    }
+
     if (error.message === 'CAPITULO_NO_ENCONTRADO') {
       return res.status(400).json({
         success: false,
@@ -82,7 +89,8 @@ export const createExamen = async (req, res) => {
 
 export const getHabilitaciones = async (req, res) => {
   try {
-    const habilitaciones = await ExamenRepo.getHabilitacionesCapitulos();
+    const usuarioId = req.user?.id ?? null;
+    const habilitaciones = await ExamenRepo.getHabilitacionesCapitulos(usuarioId);
 
     res.json({
       success: true,

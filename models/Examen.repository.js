@@ -30,16 +30,40 @@ const mapRowToHabilitacion = (row) => ({
   capitulo: row.numero_curso != null ? String(row.numero_curso) : null,
   habilitado: row.habilitado === true,
   maxPreguntas: parseInt(row.max_preguntas, 10),
+  instancias: row.instancias != null ? parseInt(row.instancias, 10) : 1,
+  intentosUsados: row.intentos_usados != null ? parseInt(row.intentos_usados, 10) : 0,
+  ultimoExamenCompletadoId:
+    row.ultimo_examen_completado_id != null ? parseInt(row.ultimo_examen_completado_id, 10) : null,
   updatedAt: row.habilitacion_updated_at
 });
 
-export const getHabilitacionesCapitulos = async () => {
+export const getHabilitacionesCapitulos = async (usuarioId = null) => {
+  if (usuarioId != null) {
+    const result = await query(
+      `SELECT
+         c.id,
+         c.nombre,
+         c.numero_curso,
+         c.habilitado,
+         c.max_preguntas,
+         c.instancias,
+         c.habilitacion_updated_at,
+         COUNT(e.id) FILTER (WHERE e.estado = 'COMPLETADO') AS intentos_usados,
+         MAX(e.id) FILTER (WHERE e.estado = 'COMPLETADO')   AS ultimo_examen_completado_id
+       FROM capitulo c
+       LEFT JOIN examen e ON e.capitulo_id = c.id AND e.usuario_id = $1
+       GROUP BY c.id
+       ORDER BY c.orden ASC, c.id ASC`,
+      [usuarioId]
+    );
+    return result.rows.map((row) => mapRowToHabilitacion(row));
+  }
+
   const result = await query(
-    `SELECT id, nombre, numero_curso, habilitado, max_preguntas, habilitacion_updated_at
+    `SELECT id, nombre, numero_curso, habilitado, max_preguntas, instancias, habilitacion_updated_at
      FROM capitulo
      ORDER BY orden ASC, id ASC`
   );
-
   return result.rows.map((row) => mapRowToHabilitacion(row));
 };
 
@@ -81,7 +105,7 @@ export const createExamenAleatorio = async (examenData) => {
     } = examenData;
 
     const capResult = await client.query(
-      `SELECT id, nombre, habilitado, max_preguntas, numero_curso
+      `SELECT id, nombre, habilitado, max_preguntas, instancias, numero_curso
        FROM capitulo WHERE id = $1`,
       [capituloId]
     );
@@ -95,6 +119,20 @@ export const createExamenAleatorio = async (examenData) => {
 
     if (!esAdmin && cap.habilitado !== true) {
       throw new Error(`EXAMEN_CAPITULO_BLOQUEADO:${capituloId}`);
+    }
+
+    if (!esAdmin) {
+      const instancias = cap.instancias != null ? parseInt(cap.instancias, 10) : 1;
+      const intentosResult = await client.query(
+        `SELECT COUNT(*)::INTEGER AS intentos_usados
+         FROM examen
+         WHERE usuario_id = $1 AND capitulo_id = $2 AND estado = 'COMPLETADO'`,
+        [usuarioId, capituloId]
+      );
+      const intentosUsados = intentosResult.rows[0].intentos_usados ?? 0;
+      if (intentosUsados >= instancias) {
+        throw new Error('LIMITE_INSTANCIAS_ALCANZADO');
+      }
     }
 
     let pedidas =
