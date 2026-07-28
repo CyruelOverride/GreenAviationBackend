@@ -15,7 +15,7 @@ export const listCapitulos = async (req, res) => {
 
 export const createCapitulo = async (req, res) => {
   try {
-    const { nombre, numeroCurso, orden, maxPreguntas, habilitado } = req.body;
+    const { nombre, numeroCurso, orden, maxPreguntas, instancias, habilitado } = req.body;
     if (!nombre || !String(nombre).trim()) {
       return res.status(400).json({
         success: false,
@@ -45,11 +45,23 @@ export const createCapitulo = async (req, res) => {
       }
     }
 
+    let inst = 1;
+    if (instancias !== undefined && instancias !== null && instancias !== '') {
+      inst = parseInt(instancias, 10);
+      if (Number.isNaN(inst) || inst < 1 || inst > 20) {
+        return res.status(400).json({
+          success: false,
+          message: 'instancias debe estar entre 1 y 20'
+        });
+      }
+    }
+
     const capitulo = await CapituloRepo.createCapitulo({
       nombre: String(nombre).trim(),
       numeroCurso: nc,
       orden: orden != null ? parseInt(orden, 10) : null,
       maxPreguntas: mp,
+      instancias: inst,
       habilitado: habilitado === true
     });
 
@@ -74,7 +86,7 @@ export const patchCapitulo = async (req, res) => {
       return res.status(400).json({ success: false, message: 'Id inválido' });
     }
 
-    const { nombre, numeroCurso, orden, activo, maxPreguntas, habilitado } = req.body;
+    const { nombre, numeroCurso, orden, activo, maxPreguntas, instancias, habilitado } = req.body;
     const payload = {};
 
     if (nombre !== undefined) payload.nombre = nombre;
@@ -102,6 +114,16 @@ export const patchCapitulo = async (req, res) => {
         });
       }
       payload.maxPreguntas = mp;
+    }
+    if (instancias !== undefined) {
+      const inst = parseInt(instancias, 10);
+      if (Number.isNaN(inst) || inst < 1 || inst > 20) {
+        return res.status(400).json({
+          success: false,
+          message: 'instancias debe estar entre 1 y 20'
+        });
+      }
+      payload.instancias = inst;
     }
     if (habilitado !== undefined) payload.habilitado = Boolean(habilitado);
 

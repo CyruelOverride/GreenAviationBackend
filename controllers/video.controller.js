@@ -152,68 +152,77 @@ export const startVideo = async (req, res) => {
  * Verificar si un examen específico está desbloqueado para el usuario
  * @route GET /api/videos/exam-unlock/:capitulo
  */
+// export const checkExamUnlock = async (req, res) => {
+//   try {
+//     const userId = req.user.id;
+//     const capitulo = parseInt(req.params.capitulo);
+
+//     if (isNaN(capitulo) || capitulo < 1 || capitulo > 13) {
+//       return res.status(400).json({
+//         success: false,
+//         message: 'Capítulo inválido'
+//       });
+//     }
+
+//     // Obtener el video correspondiente a este capítulo
+//     // (Se asume que cada capítulo tiene videos asociados)
+//     const videoResult = await query(
+//       `SELECT started_at FROM video_progress 
+//        WHERE user_id = $1 AND video_numero = $2`,
+//       [userId, capitulo]
+//     );
+
+//     if (videoResult.rows.length === 0) {
+//       return res.json({
+//         success: true,
+//         data: {
+//           desbloqueado: false,
+//           razon: 'VIDEO_NO_VISTO',
+//           mensaje: 'Debes ver el video del capítulo primero'
+//         }
+//       });
+//     }
+
+//     const startedAt = new Date(videoResult.rows[0].started_at);
+//     const ahora = new Date();
+//     const minutosTranscurridos = (ahora - startedAt) / (1000 * 60);
+
+//     if (minutosTranscurridos < 10) {
+//       const minutosRestantes = Math.ceil(10 - minutosTranscurridos);
+//       return res.json({
+//         success: true,
+//         data: {
+//           desbloqueado: false,
+//           razon: 'TIEMPO_INSUFICIENTE',
+//           mensaje: `Espera ${minutosRestantes} minuto(s) más para desbloquear el examen`,
+//           minutosRestantes
+//         }
+//       });
+//     }
+
+//     res.json({
+//       success: true,
+//       data: {
+//         desbloqueado: true,
+//         mensaje: 'El examen está desbloqueado'
+//       }
+//     });
+//   } catch (error) {
+//     console.error('Error al verificar desbloqueo de examen:', error);
+//     res.status(500).json({
+//       success: false,
+//       message: 'Error al verificar desbloqueo',
+//       error: error.message
+//     });
+//   }
+// };
 export const checkExamUnlock = async (req, res) => {
-  try {
-    const userId = req.user.id;
-    const capitulo = parseInt(req.params.capitulo);
-
-    if (isNaN(capitulo) || capitulo < 1 || capitulo > 13) {
-      return res.status(400).json({
-        success: false,
-        message: 'Capítulo inválido'
-      });
-    }
-
-    // Obtener el video correspondiente a este capítulo
-    // (Se asume que cada capítulo tiene videos asociados)
-    const videoResult = await query(
-      `SELECT started_at FROM video_progress 
-       WHERE user_id = $1 AND video_numero = $2`,
-      [userId, capitulo]
-    );
-
-    if (videoResult.rows.length === 0) {
-      return res.json({
-        success: true,
-        data: {
-          desbloqueado: false,
-          razon: 'VIDEO_NO_VISTO',
-          mensaje: 'Debes ver el video del capítulo primero'
-        }
-      });
-    }
-
-    const startedAt = new Date(videoResult.rows[0].started_at);
-    const ahora = new Date();
-    const minutosTranscurridos = (ahora - startedAt) / (1000 * 60);
-
-    if (minutosTranscurridos < 10) {
-      const minutosRestantes = Math.ceil(10 - minutosTranscurridos);
-      return res.json({
-        success: true,
-        data: {
-          desbloqueado: false,
-          razon: 'TIEMPO_INSUFICIENTE',
-          mensaje: `Espera ${minutosRestantes} minuto(s) más para desbloquear el examen`,
-          minutosRestantes
-        }
-      });
-    }
-
     res.json({
-      success: true,
-      data: {
-        desbloqueado: true,
-        mensaje: 'El examen está desbloqueado'
-      }
+        success: true,
+        data: {
+            desbloqueado: true,
+            mensaje: "El examen está desbloqueado"
+        }
     });
-  } catch (error) {
-    console.error('Error al verificar desbloqueo de examen:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Error al verificar desbloqueo',
-      error: error.message
-    });
-  }
 };
 
