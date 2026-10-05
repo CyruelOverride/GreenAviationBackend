@@ -210,14 +210,6 @@ export const updateClaseOnline = async (req, res) => {
       });
     }
 
-    // Si la clase está "Terminada" y no se está cambiando a "Grabacion", no permitir modificación
-    if (clase.estado === 'Terminada' && estado !== 'Grabacion') {
-      return res.status(400).json({
-        success: false,
-        message: 'No se puede modificar una clase que está en estado "Terminada". Solo se puede cambiar a "Grabacion"'
-      });
-    }
-
     // Para otros estados, permitir modificación
     const updateData = {
       ...otherFields
