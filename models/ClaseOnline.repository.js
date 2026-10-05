@@ -38,6 +38,7 @@ const mapRowToClaseOnline = async (row) => {
 
   return {
     id: row.id,
+    titulo: row.titulo,
     link: row.link,
     linkGrabacion: row.link_grabacion,
     codigoAcceso: row.codigo_acceso ?? null,
@@ -129,6 +130,7 @@ export const findClasesOnline = async (filters = {}) => {
 // Crear clase online
 export const createClaseOnline = async (claseData) => {
   const {
+    titulo,
     link,
     linkGrabacion,
     codigoAcceso,
@@ -146,10 +148,11 @@ export const createClaseOnline = async (claseData) => {
   // Insertar clase online
   const result = await query(
     `INSERT INTO clases_online (
-      link, link_grabacion, codigo_acceso, fecha_hora_inicio, fecha_hora_fin, estado, instructor_id
-    ) VALUES ($1, $2, $3, $4, $5, $6, $7)
+      titulo, link, link_grabacion, codigo_acceso, fecha_hora_inicio, fecha_hora_fin, estado, instructor_id
+    ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
     RETURNING *`,
     [
+      titulo,
       link,
       linkGrabacion || null,
       codigoAccesoNorm,
@@ -170,6 +173,7 @@ export const updateClaseOnline = async (id, claseData) => {
   let paramCount = 1;
 
   const allowedFields = {
+    titulo: 'titulo',
     link: 'link',
     linkGrabacion: 'link_grabacion',
     codigoAcceso: 'codigo_acceso',

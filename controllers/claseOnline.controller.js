@@ -85,6 +85,7 @@ export const getClaseOnlineById = async (req, res) => {
 export const createClaseOnline = async (req, res) => {
   try {
     const {
+      titulo,
       link,
       linkGrabacion,
       codigoAcceso,
@@ -92,6 +93,13 @@ export const createClaseOnline = async (req, res) => {
       fechaHoraFin,
       instructorId
     } = req.body;
+
+    if (typeof titulo !== 'string' || !titulo.trim()) {
+      return res.status(400).json({
+        success: false,
+        message: 'El título de la clase es requerido'
+      });
+    }
 
     // Validar que se proporcione el link
     if (!link) {
@@ -125,6 +133,7 @@ export const createClaseOnline = async (req, res) => {
     const estado = 'Pendiente';
 
     const clase = await ClaseOnlineRepo.createClaseOnline({
+      titulo: titulo.trim(),
       link,
       linkGrabacion,
       codigoAcceso,
@@ -165,6 +174,20 @@ export const updateClaseOnline = async (req, res) => {
     // Solo se puede modificar si NO está en estado "Terminada"
     // EXCEPTO si se quiere cambiar a "Grabacion" (modificación especial)
     const { estado, linkGrabacion, ...otherFields } = req.body;
+
+    if (
+      otherFields.titulo !== undefined &&
+      (typeof otherFields.titulo !== 'string' || !otherFields.titulo.trim())
+    ) {
+      return res.status(400).json({
+        success: false,
+        message: 'El título de la clase no puede estar vacío'
+      });
+    }
+
+    if (otherFields.titulo !== undefined) {
+      otherFields.titulo = otherFields.titulo.trim();
+    }
 
     // Si se intenta cambiar el estado a "Grabacion" y la clase está "Terminada", permitirlo
     if (estado === 'Grabacion' && clase.estado === 'Terminada') {
